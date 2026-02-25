@@ -1,0 +1,26 @@
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+.env.local
+
+# db
+*.db
+*.sqlite
+*.sqlite3
+
+# cache
+.cache/
+.mypy_cache/
+.pytest_cache/
+
+# node
+node_modules/
+
+# ide
+.vscode/
+.idea/
+.DS_Store

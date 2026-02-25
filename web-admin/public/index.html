@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Lock Face - Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">🔐 Smart Lock Face</div>
+      <div class="right">
+        <span id="meLabel" class="muted"></span>
+        <button id="logoutBtn" class="btn ghost">Logout</button>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card" id="authCard">
+        <h2>Đăng nhập</h2>
+        <div class="row">
+          <label>Email</label>
+          <input id="email" placeholder="email@example.com" />
+        </div>
+        <div class="row">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="••••••••" />
+        </div>
+        <div class="actions">
+          <button id="loginBtn" class="btn">Login</button>
+          <button id="registerBtn" class="btn ghost">Register</button>
+        </div>
+        <p class="muted small">Tip: Register tạo account mới. Sau đó tạo Lock và add member.</p>
+      </section>
+
+      <section class="card">
+        <h2>Locks</h2>
+        <div class="actions">
+          <input id="lockName" placeholder="Tên khoá (VD: Nhà A)" />
+          <button id="createLockBtn" class="btn">Create Lock</button>
+        </div>
+        <div class="row">
+          <label>Chọn lock</label>
+          <select id="lockSelect"></select>
+        </div>
+        <div class="muted small" id="lockMeta"></div>
+
+        <hr/>
+
+        <h3>Members</h3>
+        <div class="actions">
+          <input id="memberEmail" placeholder="email user" />
+          <select id="memberRole">
+            <option value="USER">USER</option>
+            <option value="OWNER">OWNER</option>
+          </select>
+          <button id="addMemberBtn" class="btn ghost">Add Member</button>
+        </div>
+        <div id="membersList" class="list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Camera</h2>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        <div class="actions">
+          <button id="startCamBtn" class="btn">Start Camera</button>
+          <button id="stopCamBtn" class="btn ghost">Stop</button>
+        </div>
+
+        <hr/>
+
+        <h3>Enroll (5 shots → mean embedding)</h3>
+        <div class="row">
+          <label>Target account_id</label>
+          <input id="targetAccountId" placeholder="VD: 2" />
+        </div>
+        <div class="actions">
+          <button id="enroll5Btn" class="btn">Enroll 5 shots</button>
+        </div>
+        <div class="muted small" id="enrollStatus"></div>
+
+        <hr/>
+
+        <h3>Verify</h3>
+        <div class="actions">
+          <button id="verifyBtn" class="btn ghost">Verify now</button>
+        </div>
+        <pre id="verifyResult" class="pre"></pre>
+      </section>
+
+      <section class="card">
+        <h2>Realtime Events (WebSocket)</h2>
+        <div class="row">
+          <label>WS</label>
+          <span id="wsStatus" class="badge">OFF</span>
+        </div>
+        <div class="actions">
+          <button id="connectWsBtn" class="btn">Connect WS</button>
+          <button id="clearEventsBtn" class="btn ghost">Clear</button>
+        </div>
+        <div id="events" class="events"></div>
+
+        <hr/>
+
+        <h3>Logs</h3>
+        <div class="actions">
+          <button id="loadLogsBtn" class="btn ghost">Load Logs</button>
+        </div>
+        <div id="logs" class="list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
