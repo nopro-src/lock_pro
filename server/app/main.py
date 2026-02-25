@@ -1,39 +1,84 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from __future__ import annotations
+
+import logging
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.api.routers import api_router
-from app.api.routers.ws import router as ws_router  # <-- add
-from app.db import Base, engine
-from app.db.seed import seed_default_owner
+from app.logging_config import setup_logging
+from app.db.session import engine
+from app.db.base import Base
+from app.api.routers import auth, locks, users, face, logs, system
+from app.security.jwt import decode_token
+from app.ws.manager import WsManager
+from app.schemas.ws import WsEvent
 
 
-def create_app() -> FastAPI:
-    app = FastAPI(title=settings.APP_NAME)
+setup_logging(settings.LOG_LEVEL)
+logger = logging.getLogger("app")
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins_list(),
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 
-    # init db
-    Base.metadata.create_all(bind=engine)
-    seed_default_owner()
+# Create tables (prod: replace with Alembic)
+Base.metadata.create_all(bind=engine)
 
-    # API under /api
-    app.include_router(api_router, prefix="/api")
+# Routers
+app.include_router(auth.router)
+app.include_router(locks.router)
+app.include_router(users.router)
+app.include_router(face.router)
+app.include_router(logs.router)
+app.include_router(system.router)
 
-    # WebSocket should NOT be under /api (so path is /ws)
-    app.include_router(ws_router)
-
-    # Serve web-admin under /admin (avoid catching /ws)
-    app.mount("/admin", StaticFiles(directory="../web-admin/public", html=True), name="web-admin")
-
-    return app
+# Static admin
+app.mount("/admin", StaticFiles(directory=settings.STATIC_ADMIN_DIR, html=True), name="admin")
 
 
-app = create_app()
+@app.get("/")
+def root():
+    return RedirectResponse(url="/admin/dashboard.html")
+
+
+_ws = WsManager()
+
+
+@app.websocket("/ws")
+async def ws_endpoint(ws: WebSocket):
+    # Auth via query param token=? OR header Authorization
+    token = ws.query_params.get("token")
+    if not token:
+        auth = ws.headers.get("authorization")
+        if auth and auth.lower().startswith("bearer "):
+            token = auth.split(" ", 1)[1].strip()
+
+    if not token:
+        await ws.close(code=1008)
+        return
+
+    try:
+        payload = decode_token(token)
+        account_id = int(payload.sub)
+    except Exception:
+        await ws.close(code=1008)
+        return
+
+    conn = await _ws.connect(ws, account_id=account_id)
+    try:
+        # first message from client should be: {"action":"join","lock_id":123}
+        await ws.send_json(WsEvent(type="INFO", lock_id=None, payload={"msg": "connected"}).model_dump())
+        while True:
+            msg = await ws.receive_json()
+            action = msg.get("action")
+            if action == "join":
+                lock_id = int(msg.get("lock_id"))
+                await _ws.join_lock_room(conn, lock_id)
+                await ws.send_json(WsEvent(type="INFO", lock_id=lock_id, payload={"msg": "joined"}).model_dump())
+            else:
+                await ws.send_json(WsEvent(type="ERROR", lock_id=None, payload={"msg": "unknown_action"}).model_dump())
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        logger.error("ws_error", exc_info=e)
+    finally:
+        await _ws.leave_all(conn)

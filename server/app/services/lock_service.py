@@ -1,41 +1,71 @@
-import secrets
+from __future__ import annotations
+
 from sqlalchemy.orm import Session
-from app.db.repositories import locks_repo, accounts_repo
-from app.core.exceptions import not_found, forbidden, bad_request
+
+from app.repos.lock_repo import LockRepo
+from app.repos.lock_member_repo import LockMemberRepo
+from app.models.lock_member import LockRole
+from app.exceptions import ConflictError, ForbiddenError, NotFoundError
+from app.security.rbac import has_at_least
 
 
-ROLE_OWNER = "OWNER"
-ROLE_USER = "USER"
+class LockService:
+    def __init__(self, db: Session):
+        self.db = db
+        self.locks = LockRepo(db)
+        self.members = LockMemberRepo(db)
 
+    def create_lock(self, owner_id: int, name: str, code: str, threshold_override: float | None):
+        if self.locks.get_by_code(code):
+            raise ConflictError("Lock code already exists")
+        lock = self.locks.create(name=name, code=code, owner_id=owner_id, threshold_override=threshold_override)
+        # ensure owner in lock_members too
+        if not self.members.get_member(lock.id, owner_id):
+            self.members.add_member(lock.id, owner_id, LockRole.OWNER)
+        self.db.commit()
+        return lock
 
-def create_lock_as_owner(db: Session, owner_account_id: int, name: str):
-    # generate pairing code (later ESP32 can use it)
-    code = secrets.token_hex(8)
-    lk = locks_repo.create_lock(db, name=name, code=code)
-    locks_repo.add_member(db, lock_id=lk.id, account_id=owner_account_id, role=ROLE_OWNER)
-    return lk
+    def require_member_role(self, lock_id: int, account_id: int, required: LockRole) -> LockRole:
+        lock = self.locks.get(lock_id)
+        if not lock:
+            raise NotFoundError("Lock not found")
 
+        m = self.members.get_member(lock_id, account_id)
+        if not m:
+            # owner_id bypass
+            if lock.owner_id == account_id:
+                return LockRole.OWNER
+            raise ForbiddenError("Not a member of this lock")
 
-def require_owner(db: Session, lock_id: int, account_id: int):
-    mem = locks_repo.get_membership(db, lock_id, account_id)
-    if not mem:
-        raise forbidden("Not a member of this lock")
-    if mem.role != ROLE_OWNER:
-        raise forbidden("Owner role required")
-    return mem
+        if not has_at_least(m.role, required):
+            raise ForbiddenError("Insufficient role")
+        return m.role
 
+    def add_member(self, lock_id: int, actor_id: int, account_id: int, role: LockRole):
+        # only OWNER/ADMIN can add members; ADMIN cannot add OWNER
+        actor_role = self.require_member_role(lock_id, actor_id, LockRole.ADMIN)
+        if actor_role == LockRole.ADMIN and role == LockRole.OWNER:
+            raise ForbiddenError("ADMIN cannot assign OWNER role")
 
-def add_user_to_lock(db: Session, lock_id: int, owner_account_id: int, email: str, role: str):
-    require_owner(db, lock_id, owner_account_id)
-    if role not in (ROLE_OWNER, ROLE_USER):
-        raise bad_request("Invalid role")
+        if self.members.get_member(lock_id, account_id):
+            raise ConflictError("Member already exists")
 
-    acc = accounts_repo.get_by_email(db, email)
-    if not acc:
-        raise not_found("Account not found")
+        row = self.members.add_member(lock_id, account_id, role)
+        self.db.commit()
+        return row
 
-    existing = locks_repo.get_membership(db, lock_id, acc.id)
-    if existing:
-        return existing
+    def list_members(self, lock_id: int, actor_id: int):
+        self.require_member_role(lock_id, actor_id, LockRole.ADMIN)
+        return self.members.list_members(lock_id)
 
-    return locks_repo.add_member(db, lock_id, acc.id, role=role)
+    def list_locks_for_account(self, account_id: int):
+        owned = self.locks.list_for_account(account_id)
+        member_rows = self.members.list_locks_for_account(account_id)
+        member_lock_ids = {m.lock_id for m in member_rows}
+        # naive: load each lock via repo.get (OK for demo; production => join query)
+        extra = []
+        for lid in member_lock_ids:
+            l = self.locks.get(lid)
+            if l and l.owner_id != account_id:
+                extra.append(l)
+        return owned + extra

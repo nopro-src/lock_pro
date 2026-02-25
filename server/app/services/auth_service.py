@@ -1,24 +1,34 @@
+from __future__ import annotations
+
+from datetime import datetime
 from sqlalchemy.orm import Session
-from app.db.repositories import accounts_repo
-from app.core.security import hash_password, verify_password, create_access_token
-from app.core.exceptions import bad_request, unauthorized
+
+from app.repos.account_repo import AccountRepo
+from app.security.password import hash_password, verify_password
+from app.security.jwt import create_access_token
+from app.exceptions import ConflictError, ForbiddenError
 
 
-def register(db: Session, email: str, password: str, full_name: str = ""):
-    if accounts_repo.get_by_email(db, email):
-        raise bad_request("Email already exists")
-    acc = accounts_repo.create(db, email=email, password_hash=hash_password(password), full_name=full_name)
-    token = create_access_token(subject=str(acc.id))
-    return acc, token
+class AuthService:
+    def __init__(self, db: Session):
+        self.db = db
+        self.accounts = AccountRepo(db)
 
+    def register(self, email: str, password: str, full_name: str):
+        if self.accounts.get_by_email(email):
+            raise ConflictError("Email already exists")
+        acct = self.accounts.create(email=email, password_hash=hash_password(password), full_name=full_name)
+        self.db.commit()
+        return acct
 
-def login(db: Session, email: str, password: str):
-    acc = accounts_repo.get_by_email(db, email)
-    if not acc:
-        raise unauthorized("Invalid credentials")
-    if not verify_password(password, acc.password_hash):
-        raise unauthorized("Invalid credentials")
-    if not acc.is_active:
-        raise unauthorized("Account inactive")
-    token = create_access_token(subject=str(acc.id))
-    return acc, token
+    def login(self, email: str, password: str) -> str:
+        acct = self.accounts.get_by_email(email)
+        if not acct:
+            raise ForbiddenError("Invalid credentials")
+        if not acct.is_active:
+            raise ForbiddenError("Account disabled")
+        if not verify_password(password, acct.password_hash):
+            raise ForbiddenError("Invalid credentials")
+        acct.last_login_at = datetime.utcnow()
+        self.db.commit()
+        return create_access_token(acct.id)
