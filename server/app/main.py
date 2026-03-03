@@ -20,8 +20,10 @@ logger = logging.getLogger("app")
 
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 
-# Create tables (prod: replace with Alembic)
 Base.metadata.create_all(bind=engine)
+
+# Single WS manager
+app.state.ws_manager = WsManager()
 
 # Routers
 app.include_router(auth.router)
@@ -31,26 +33,23 @@ app.include_router(face.router)
 app.include_router(logs.router)
 app.include_router(system.router)
 
-# Static admin
-app.mount("/admin", StaticFiles(directory=settings.STATIC_ADMIN_DIR, html=True), name="admin")
+# Static UIs
+app.mount("/owner", StaticFiles(directory=settings.STATIC_OWNER_DIR, html=True), name="owner")
+app.mount("/user", StaticFiles(directory=settings.STATIC_USER_DIR, html=True), name="user")
 
 
 @app.get("/")
 def root():
-    return RedirectResponse(url="/admin/dashboard.html")
-
-
-_ws = WsManager()
+    return RedirectResponse(url="/owner/login.html")
 
 
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
-    # Auth via query param token=? OR header Authorization
     token = ws.query_params.get("token")
     if not token:
-        auth = ws.headers.get("authorization")
-        if auth and auth.lower().startswith("bearer "):
-            token = auth.split(" ", 1)[1].strip()
+        auth_header = ws.headers.get("authorization")
+        if auth_header and auth_header.lower().startswith("bearer "):
+            token = auth_header.split(" ", 1)[1].strip()
 
     if not token:
         await ws.close(code=1008)
@@ -63,22 +62,29 @@ async def ws_endpoint(ws: WebSocket):
         await ws.close(code=1008)
         return
 
-    conn = await _ws.connect(ws, account_id=account_id)
+    ws_manager: WsManager = app.state.ws_manager
+    conn = await ws_manager.connect(ws, account_id=account_id)
+
     try:
-        # first message from client should be: {"action":"join","lock_id":123}
         await ws.send_json(WsEvent(type="INFO", lock_id=None, payload={"msg": "connected"}).model_dump())
+
         while True:
             msg = await ws.receive_json()
-            action = msg.get("action")
-            if action == "join":
-                lock_id = int(msg.get("lock_id"))
-                await _ws.join_lock_room(conn, lock_id)
+            if msg.get("action") == "join":
+                try:
+                    lock_id = int(msg.get("lock_id"))
+                except Exception:
+                    await ws.send_json(WsEvent(type="ERROR", lock_id=None, payload={"msg": "invalid_lock_id"}).model_dump())
+                    continue
+
+                await ws_manager.join_lock_room(conn, lock_id)
                 await ws.send_json(WsEvent(type="INFO", lock_id=lock_id, payload={"msg": "joined"}).model_dump())
             else:
                 await ws.send_json(WsEvent(type="ERROR", lock_id=None, payload={"msg": "unknown_action"}).model_dump())
+
     except WebSocketDisconnect:
         pass
     except Exception as e:
-        logger.error("ws_error", exc_info=e)
+        logger.exception("ws_error: %s", e)
     finally:
-        await _ws.leave_all(conn)
+        await ws_manager.leave_all(conn)

@@ -37,23 +37,78 @@
     <div class="container-fluid p-4">
       <div class="row g-3">
         <div class="col-lg-7">
-          <div class="card card-dark p-3">
-            <div class="mb-3">
-              <label class="form-label">Lock</label>
-              <select id="lockSel" class="form-select input-dark"></select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Account ID to enroll</label>
-              <input id="accountId" class="form-control input-dark" placeholder="2"/>
-              <div class="small-muted mt-1">Tip: dùng /Users để lấy ID (OWNER only demo). Hoặc seed: admin id=2, user id=3.</div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">5+ images</label>
-              <input id="shots" type="file" class="form-control input-dark" accept="image/*" multiple/>
-              <div class="small-muted mt-1">Ảnh rõ nét, đủ sáng, mặt chiếm diện tích đủ lớn.</div>
-            </div>
-            <button class="btn btn-primary" onclick="doEnroll()">Enroll</button>
+<div class="card card-dark p-3">
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="mb-3">
+        <label class="form-label">Lock</label>
+        <select id="lockSel" class="form-select input-dark"></select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Account ID to enroll</label>
+        <input id="accountId" class="form-control input-dark" placeholder="3"/>
+        <div class="small-muted mt-1">
+          Nếu bạn muốn tạo user mới ngay tại đây (OWNER), bật “Create user”.
+        </div>
+      </div>
+
+      <div class="form-check mb-2">
+        <input id="createUserToggle" class="form-check-input" type="checkbox" onchange="toggleCreateUser()"/>
+        <label class="form-check-label">Create user (OWNER only) + enroll ngay</label>
+      </div>
+
+      <div id="createUserBox" style="display:none">
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <input id="newEmail" class="form-control input-dark" placeholder="newuser@example.com"/>
           </div>
+          <div class="col-md-6">
+            <input id="newPassword" type="password" class="form-control input-dark" placeholder="Password (>=8)"/>
+          </div>
+          <div class="col-12">
+            <input id="newFullName" class="form-control input-dark" placeholder="Full name"/>
+          </div>
+        </div>
+      </div>
+
+      <hr class="sep"/>
+
+      <div class="fw-semibold mb-2">Webcam Capture (5 shots)</div>
+      <div class="cam-box mb-2">
+        <video id="cam" autoplay playsinline style="width:100%; height:auto; display:block"></video>
+      </div>
+
+      <div class="cam-tools mb-3">
+        <button class="btn btn-outline-light" onclick="camStart()">Start Camera</button>
+        <button class="btn btn-outline-light" onclick="camStop()">Stop</button>
+        <button class="btn btn-primary" onclick="captureShot()">Capture 1 Shot</button>
+        <button class="btn btn-primary" onclick="capture5Auto()">Auto Capture 5</button>
+        <button class="btn btn-outline-light" onclick="clearShots()">Clear Shots</button>
+      </div>
+
+      <div class="mb-3">
+        <div class="small-muted mb-2">Captured shots: <span id="shotCount">0</span>/5</div>
+        <div id="shotChips" class="d-flex flex-wrap gap-2"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="doEnrollFromCam()">Enroll from Webcam</button>
+      <canvas id="canvas" style="display:none"></canvas>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card card-dark p-3 h-100">
+        <div class="fw-semibold mb-2">Quality Tips</div>
+        <ul class="small-muted mb-0">
+          <li>Ngồi gần camera, mặt chiếm diện tích đủ lớn</li>
+          <li>Ánh sáng đều, tránh ngược sáng</li>
+          <li>Không rung, không blur</li>
+          <li>Chụp 5 shots: thẳng, hơi trái/phải nhẹ</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
         </div>
 
         <div class="col-lg-5">

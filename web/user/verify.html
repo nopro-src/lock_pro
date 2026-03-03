@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Verify — User</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="/user/assets/styles.css" rel="stylesheet"/>
+</head>
+<body class="bg-slate-50" onload="verifyInit()">
+  <div class="min-h-screen">
+    <header class="bg-white border-b border-slate-100">
+      <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div>
+          <div class="font-semibold text-slate-900">Smart Lock Face Pro</div>
+          <div class="text-xs text-slate-500">User Verify</div>
+        </div>
+        <div class="text-sm text-slate-600">
+          <span data-me="full_name"></span> • <button onclick="logout()" class="text-blue-600 hover:underline">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <section class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="font-semibold text-slate-900">Unlock with Face</div>
+            <select id="lockSel" class="px-3 py-2 rounded-xl border border-slate-200"></select>
+          </div>
+
+          <div class="bg-slate-50 rounded-2xl border border-slate-100 p-3">
+            <video id="cam" autoplay playsinline class="w-full rounded-xl bg-black/5"></video>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <button onclick="camStart()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Start Camera</button>
+              <button onclick="camStop()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Stop</button>
+              <button onclick="doVerify()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-medium">Capture & Verify</button>
+            </div>
+          </div>
+
+          <canvas id="canvas" class="hidden"></canvas>
+        </section>
+
+        <section class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+          <div class="font-semibold text-slate-900 mb-2">Result</div>
+          <pre id="result" class="text-xs text-slate-700 whitespace-pre-wrap"></pre>
+          <div class="text-xs text-slate-400 mt-3">
+            If success, backend creates OPEN command. ESP32 later just consumes it.
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <script src="/user/assets/common.js"></script>
+  <script src="/user/assets/auth.js"></script>
+  <script src="/user/assets/verify.js"></script>
+</body>
+</html>

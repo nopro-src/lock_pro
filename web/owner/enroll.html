@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Enroll — Owner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="/owner/assets/styles.css" rel="stylesheet"/>
+</head>
+<body class="bg-slate-50" onload="enrollInit()">
+  <div class="flex min-h-screen">
+    <aside class="w-64 bg-white border-r border-slate-100 p-4">
+      <div class="mb-6">
+        <div class="font-semibold text-slate-900">Smart Lock Face Pro</div>
+        <div class="text-xs text-slate-500">Owner Console</div>
+      </div>
+      <nav class="space-y-1">
+        <a data-nav="dashboard" href="/owner/dashboard.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Dashboard</a>
+        <a data-nav="locks" href="/owner/locks.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Locks</a>
+        <a data-nav="users" href="/owner/users.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Users</a>
+        <a data-nav="enroll" href="/owner/enroll.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Enroll</a>
+        <a data-nav="logs" href="/owner/logs.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Logs</a>
+        <a data-nav="settings" href="/owner/settings.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Settings</a>
+      </nav>
+      <button onclick="logout()" class="mt-6 w-full px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700">Logout</button>
+    </aside>
+
+    <main class="flex-1 p-6">
+      <div class="mb-6">
+        <div class="text-xl font-semibold text-slate-900">Enroll Face Templates</div>
+        <div class="text-sm text-slate-500">Capture 5 images (webcam) or upload from disk</div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <section class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <div>
+              <label class="text-sm text-slate-600">Lock</label>
+              <select id="lockSel" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200"></select>
+            </div>
+            <div>
+              <label class="text-sm text-slate-600">Account ID to enroll</label>
+              <input id="accountId" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="e.g. 3"/>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 rounded-2xl border border-slate-100 p-3">
+            <video id="cam" autoplay playsinline class="w-full rounded-xl bg-black/5"></video>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <button onclick="camStart()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Start Camera</button>
+              <button onclick="camStop()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Stop</button>
+              <button onclick="captureShot()" class="px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Capture 1</button>
+              <button onclick="autoCapture5()" class="px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Auto 5</button>
+              <button onclick="clearShots()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Clear</button>
+            </div>
+            <div class="mt-3 text-sm text-slate-600">
+              Shots: <span id="shotCount">0</span>/5
+            </div>
+            <div id="shotsBox" class="flex flex-wrap gap-2 mt-2"></div>
+          </div>
+
+          <div class="mt-4">
+            <label class="text-sm text-slate-600">Or upload 5 images</label>
+            <input id="files" type="file" multiple accept="image/*" class="mt-1 w-full"/>
+            <div class="text-xs text-slate-400 mt-1">Pick at least 5 images.</div>
+          </div>
+
+          <button onclick="doEnroll()" class="mt-4 w-full px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-medium">
+            Enroll
+          </button>
+
+          <canvas id="canvas" class="hidden"></canvas>
+        </section>
+
+        <section class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+          <div class="font-semibold text-slate-900 mb-2">Quality Tips</div>
+          <ul class="text-sm text-slate-600 space-y-2">
+            <li>Ánh sáng đều, tránh ngược sáng.</li>
+            <li>Không rung/blur, mặt đủ lớn trong khung.</li>
+            <li>Chụp 5 shot: thẳng, hơi trái, hơi phải.</li>
+            <li>Sinh đôi: cân nhắc multi-template + OTP nếu near-threshold.</li>
+          </ul>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <script src="/owner/assets/common.js"></script>
+  <script src="/owner/assets/auth.js"></script>
+  <script src="/owner/assets/enroll.js"></script>
+</body>
+</html>

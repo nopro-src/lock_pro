@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Settings — Owner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="/owner/assets/styles.css" rel="stylesheet"/>
+</head>
+<body class="bg-slate-50" onload="settingsInit()">
+  <div class="flex min-h-screen">
+    <aside class="w-64 bg-white border-r border-slate-100 p-4">
+      <div class="mb-6">
+        <div class="font-semibold text-slate-900">Smart Lock Face Pro</div>
+        <div class="text-xs text-slate-500">Owner Console</div>
+      </div>
+      <nav class="space-y-1">
+        <a data-nav="dashboard" href="/owner/dashboard.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Dashboard</a>
+        <a data-nav="locks" href="/owner/locks.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Locks</a>
+        <a data-nav="users" href="/owner/users.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Users</a>
+        <a data-nav="enroll" href="/owner/enroll.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Enroll</a>
+        <a data-nav="logs" href="/owner/logs.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Logs</a>
+        <a data-nav="settings" href="/owner/settings.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Settings</a>
+      </nav>
+      <button onclick="logout()" class="mt-6 w-full px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700">Logout</button>
+    </aside>
+
+    <main class="flex-1 p-6">
+      <div class="mb-6">
+        <div class="text-xl font-semibold text-slate-900">Settings</div>
+        <div class="text-sm text-slate-500">System configuration overview</div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+        <div class="font-semibold text-slate-900 mb-2">System Info</div>
+        <pre id="sysInfo" class="text-xs text-slate-700 whitespace-pre-wrap"></pre>
+      </div>
+    </main>
+  </div>
+
+  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <script src="/owner/assets/common.js"></script>
+  <script src="/owner/assets/auth.js"></script>
+  <script src="/owner/assets/settings.js"></script>
+</body>
+</html>

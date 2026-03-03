@@ -9,6 +9,10 @@ from app.security.jwt import decode_token
 from app.repos.account_repo import AccountRepo
 from app.models.account import Account
 
+from fastapi import Depends
+from app.exceptions import http_403
+from app.models.account import GlobalRole
+
 
 def get_current_account(
     db: Session = Depends(get_db),
@@ -27,3 +31,10 @@ def get_current_account(
     if not acct or not acct.is_active:
         raise http_401("Account disabled or not found")
     return acct
+
+def require_global_role(*roles: GlobalRole):
+    def _dep(acct=Depends(get_current_account)):
+        if acct.global_role not in roles:
+            raise http_403("Forbidden: insufficient global role")
+        return acct
+    return _dep

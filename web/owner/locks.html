@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Locks — Owner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="/owner/assets/styles.css" rel="stylesheet"/>
+</head>
+<body class="bg-slate-50" onload="locksInit()">
+  <div class="flex min-h-screen">
+    <aside class="w-64 bg-white border-r border-slate-100 p-4">
+      <div class="mb-6">
+        <div class="font-semibold text-slate-900">Smart Lock Face Pro</div>
+        <div class="text-xs text-slate-500">Owner Console</div>
+      </div>
+      <nav class="space-y-1">
+        <a data-nav="dashboard" href="/owner/dashboard.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Dashboard</a>
+        <a data-nav="locks" href="/owner/locks.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Locks</a>
+        <a data-nav="users" href="/owner/users.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Users</a>
+        <a data-nav="enroll" href="/owner/enroll.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Enroll</a>
+        <a data-nav="logs" href="/owner/logs.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Logs</a>
+        <a data-nav="settings" href="/owner/settings.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Settings</a>
+      </nav>
+      <button onclick="logout()" class="mt-6 w-full px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700">Logout</button>
+    </aside>
+
+    <main class="flex-1 p-6">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <div class="text-xl font-semibold text-slate-900">Locks</div>
+          <div class="text-sm text-slate-500">Create / edit / delete locks</div>
+        </div>
+        <button onclick="openNewLock()" class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">+ New Lock</button>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-slate-500">
+            <tr class="border-b">
+              <th class="text-left py-3">ID</th>
+              <th class="text-left py-3">Name</th>
+              <th class="text-left py-3">Code</th>
+              <th class="text-left py-3">Threshold</th>
+              <th class="text-right py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="locksTbody"></tbody>
+        </table>
+        <div class="text-xs text-slate-400 mt-3">
+          Note: PUT/DELETE require backend endpoints. If missing, you’ll see 404 until implemented.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div id="lockModal" class="hidden fixed inset-0 bg-black/30 flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-100 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div id="lockModalTitle" class="text-lg font-semibold text-slate-900">Create Lock</div>
+        <button onclick="closeLockModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <input id="lockId" type="hidden"/>
+      <div class="grid grid-cols-1 gap-3">
+        <div>
+          <label class="text-sm text-slate-600">Name</label>
+          <input id="lockName" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200"/>
+        </div>
+        <div>
+          <label class="text-sm text-slate-600">Pairing code</label>
+          <input id="lockCode" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200"/>
+        </div>
+        <div>
+          <label class="text-sm text-slate-600">Threshold override (optional)</label>
+          <input id="lockThreshold" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.70"/>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-5">
+        <button onclick="closeLockModal()" class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50">Cancel</button>
+        <button onclick="saveLock()" class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <script src="/owner/assets/common.js"></script>
+  <script src="/owner/assets/auth.js"></script>
+  <script src="/owner/assets/locks.js"></script>
+</body>
+</html>

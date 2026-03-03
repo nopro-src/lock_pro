@@ -1,0 +1,11 @@
+/* owner/assets/styles.css */
+:root {
+  --brand: #2563eb;
+}
+.toast {
+  animation: fadein .15s ease-out;
+}
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

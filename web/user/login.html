@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>User Login — Smart Lock Face Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="/user/assets/styles.css" rel="stylesheet"/>
+</head>
+<body class="min-h-screen bg-slate-50">
+  <div class="min-h-screen flex items-center justify-center p-6">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-6">
+      <div class="mb-6">
+        <div class="text-xl font-semibold text-slate-900">Smart Lock Face Pro</div>
+        <div class="text-sm text-slate-500">User Console</div>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-sm text-slate-600">Email</label>
+          <input id="email" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                 placeholder="user@example.com"/>
+        </div>
+        <div>
+          <label class="text-sm text-slate-600">Password</label>
+          <input id="password" type="password" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                 placeholder="********"/>
+        </div>
+        <button onclick="userLogin()"
+                class="w-full mt-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700">
+          Sign in
+        </button>
+
+        <div class="text-xs text-slate-500 mt-2">
+          Dev seed: user@example.com / User123456
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <script src="/user/assets/common.js"></script>
+  <script src="/user/assets/auth.js"></script>
+</body>
+</html>

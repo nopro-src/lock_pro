@@ -15,8 +15,18 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 @router.post("/register", response_model=MeOut)
 def register(payload: RegisterIn, db: Session = Depends(db_dep)):
     try:
-        acct = AuthService(db).register(payload.email, payload.password, payload.full_name)
-        return MeOut(id=acct.id, email=acct.email, full_name=acct.full_name, is_active=acct.is_active)
+        acct = AuthService(db).register(
+            payload.email,
+            payload.password,
+            payload.full_name,
+        )
+        return MeOut(
+            id=acct.id,
+            email=acct.email,
+            full_name=acct.full_name,
+            is_active=acct.is_active,
+            global_role=str(acct.global_role.value),
+        )
     except ConflictError as e:
         raise http_409(str(e))
 
@@ -24,12 +34,18 @@ def register(payload: RegisterIn, db: Session = Depends(db_dep)):
 @router.post("/login", response_model=TokenOut)
 def login(payload: LoginIn, db: Session = Depends(db_dep)):
     try:
-        token = AuthService(db).login(payload.email, payload.password)
-        return TokenOut(access_token=token)
+        token, role = AuthService(db).login(payload.email, payload.password)
+        return TokenOut(access_token=token, global_role=role)
     except ForbiddenError as e:
         raise http_403(str(e))
 
 
 @router.get("/me", response_model=MeOut)
 def me(acct=Depends(get_current_account)):
-    return MeOut(id=acct.id, email=acct.email, full_name=acct.full_name, is_active=acct.is_active)
+    return MeOut(
+        id=acct.id,
+        email=acct.email,
+        full_name=acct.full_name,
+        is_active=acct.is_active,
+        global_role=str(acct.global_role.value),
+    )

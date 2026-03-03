@@ -9,9 +9,12 @@ class UserCreateIn(BaseModel):
     full_name: str = Field(default="", max_length=255)
     is_active: bool = True
 
+    lock_id: int = Field(ge=1)
+
 
 class UserOut(BaseModel):
     id: int
-    email: EmailStr
+    email: str
     full_name: str
     is_active: bool
+    global_role: str

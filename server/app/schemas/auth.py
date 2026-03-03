@@ -17,10 +17,13 @@ class LoginIn(BaseModel):
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    # helpful for UI routing
+    global_role: str
 
 
 class MeOut(BaseModel):
     id: int
-    email: EmailStr
+    email: str
     full_name: str
     is_active: bool
+    global_role: str

@@ -38,6 +38,7 @@
     <div class="container-fluid p-4">
       <div class="row g-3">
         <div class="col-lg-8">
+          <!-- Realtime Panel -->
           <div class="card card-dark p-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div class="fw-semibold">Realtime Event Panel</div>
@@ -48,7 +49,36 @@
               <select id="lockSel" class="form-select input-dark"></select>
               <button class="btn btn-primary" onclick="joinWs()">Join</button>
             </div>
-            <div id="realtimePanel" style="max-height:360px; overflow:auto"></div>
+            <div id="realtimePanel" style="max-height:320px; overflow:auto"></div>
+          </div>
+
+          <!-- Quick Verify -->
+          <div class="card card-dark p-3 mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="fw-semibold">Quick Verify (Webcam)</div>
+              <div class="small-muted">POST /api/verify</div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-lg-7">
+                <div class="cam-box mb-2">
+                  <video id="vCam" autoplay playsinline style="width:100%; height:auto; display:block"></video>
+                </div>
+                <div class="cam-tools">
+                  <button class="btn btn-outline-light" onclick="vStart()">Start</button>
+                  <button class="btn btn-outline-light" onclick="vStop()">Stop</button>
+                  <button class="btn btn-primary" onclick="verifyOnce()">Capture & Verify</button>
+                </div>
+                <canvas id="vCanvas" style="display:none"></canvas>
+              </div>
+              <div class="col-lg-5">
+                <div class="small-muted mb-2">Result</div>
+                <pre id="verifyOut" class="mb-0 small" style="white-space:pre-wrap"></pre>
+                <div class="small-muted mt-2">
+                  Nếu success: backend tạo OPEN command + ghi access_logs + WS events.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -80,11 +110,14 @@
 <script src="/admin/assets/common.js"></script>
 <script src="/admin/assets/auth.js"></script>
 <script src="/admin/assets/ws.js"></script>
+<script src="/admin/assets/verify.js"></script>
+
 <script>
 async function dashboardInit(){
   guardAuth();
   setActiveNav("dashboard");
   await loadMe();
+
   const info = await apiFetch("/api/system/info");
   document.getElementById("sysInfo").textContent = JSON.stringify(info, null, 2);
 
@@ -92,6 +125,7 @@ async function dashboardInit(){
   const sel = document.getElementById("lockSel");
   sel.innerHTML = locks.map(l=> `<option value="${l.id}">${l.name} (#${l.id})</option>`).join("");
 }
+
 function joinWs(){
   const lockId = parseInt(document.getElementById("lockSel").value, 10);
   wsConnect(lockId);

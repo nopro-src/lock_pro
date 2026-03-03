@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Logs — Owner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="/owner/assets/styles.css" rel="stylesheet"/>
+</head>
+<body class="bg-slate-50" onload="logsInit()">
+  <div class="flex min-h-screen">
+    <aside class="w-64 bg-white border-r border-slate-100 p-4">
+      <div class="mb-6">
+        <div class="font-semibold text-slate-900">Smart Lock Face Pro</div>
+        <div class="text-xs text-slate-500">Owner Console</div>
+      </div>
+      <nav class="space-y-1">
+        <a data-nav="dashboard" href="/owner/dashboard.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Dashboard</a>
+        <a data-nav="locks" href="/owner/locks.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Locks</a>
+        <a data-nav="users" href="/owner/users.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Users</a>
+        <a data-nav="enroll" href="/owner/enroll.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Enroll</a>
+        <a data-nav="logs" href="/owner/logs.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Logs</a>
+        <a data-nav="settings" href="/owner/settings.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Settings</a>
+      </nav>
+      <button onclick="logout()" class="mt-6 w-full px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700">Logout</button>
+    </aside>
+
+    <main class="flex-1 p-6">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <div class="text-xl font-semibold text-slate-900">Access Logs</div>
+          <div class="text-sm text-slate-500">View by lock</div>
+        </div>
+        <div class="flex gap-2 items-center">
+          <select id="lockSel" onchange="loadLogs()" class="px-3 py-2 rounded-xl border border-slate-200"></select>
+          <button onclick="loadLogs()" class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Refresh</button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-slate-500">
+            <tr class="border-b">
+              <th class="text-left py-3">ID</th>
+              <th class="text-left py-3">Time</th>
+              <th class="text-left py-3">Matched</th>
+              <th class="text-left py-3">Score</th>
+              <th class="text-left py-3">Threshold</th>
+              <th class="text-left py-3">Result</th>
+              <th class="text-left py-3">Source</th>
+            </tr>
+          </thead>
+          <tbody id="logsTbody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <script src="/owner/assets/common.js"></script>
+  <script src="/owner/assets/auth.js"></script>
+  <script src="/owner/assets/logs.js"></script>
+</body>
+</html>
