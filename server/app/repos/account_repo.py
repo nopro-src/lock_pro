@@ -11,7 +11,6 @@ class AccountRepo:
     def get(self, account_id: int) -> Account | None:
         return self.db.query(Account).filter(Account.id == account_id).first()
 
-    # ✅ compatibility: old code calls get_by_id()
     def get_by_id(self, account_id: int) -> Account | None:
         return self.get(account_id)
 

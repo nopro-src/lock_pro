@@ -9,8 +9,8 @@ from app.schemas.enroll import EnrollIn, EnrollOut, VerifyIn, VerifyOut
 from app.security.deps import get_current_account
 from app.services.face_service import FaceService
 from app.exceptions import ForbiddenError, NotFoundError, http_403, http_404, http_422
-from app.ws.manager import WsManager
 from app.schemas.ws import WsEvent
+from app.ws.manager import WsManager
 
 router = APIRouter(tags=["face"])
 logger = logging.getLogger("api.face")
@@ -26,39 +26,30 @@ def get_ws_manager() -> WsManager:
 
 
 @router.post("/api/enroll", response_model=EnrollOut)
-async def enroll(
-    payload: EnrollIn,
-    db: Session = Depends(db_dep),
-    acct=Depends(get_current_account),
-):
-    """
-    OWNER enroll cho USER:
-      - actor_account_id: acct.id (người thao tác)
-      - target_account_id: payload.account_id (user được enroll)
-    """
+async def enroll(payload: EnrollIn, db: Session = Depends(db_dep), acct=Depends(get_current_account)):
     try:
+        # payload đã normalize -> payload.target_account_id luôn có
         t = FaceService(db, get_face_registry()).enroll(
             actor_account_id=acct.id,
             lock_id=payload.lock_id,
-            target_account_id=payload.account_id,
+            target_account_id=int(payload.target_account_id),
             images_base64=payload.images_base64,
         )
 
+        # ws event
         await get_ws_manager().broadcast(
             WsEvent(
                 type="ENROLL",
                 lock_id=payload.lock_id,
-                payload={"account_id": payload.account_id, "template_id": t.id},
+                payload={"account_id": int(payload.target_account_id), "template_id": t.id},
             )
         )
-
         return EnrollOut(
             template_id=t.id,
             model_key=t.model_key,
             shots_count=t.shots_count,
             quality_score=t.quality_score,
         )
-
     except ForbiddenError as e:
         logger.error("enroll_forbidden", exc_info=e)
         raise http_403(str(e))
@@ -71,23 +62,8 @@ async def enroll(
 
 
 @router.post("/api/verify", response_model=VerifyOut)
-async def verify(
-    payload: VerifyIn,
-    db: Session = Depends(db_dep),
-    acct=Depends(get_current_account),
-):
-    """
-    USER verify:
-      - user phải là member của lock
-    """
-    from app.services.lock_service import LockService
-    from app.models.lock_member import LockRole
-
-    try:
-        LockService(db).require_member_role(payload.lock_id, acct.id, LockRole.USER)
-    except Exception as e:
-        raise http_403(str(e))
-
+async def verify(payload: VerifyIn, db: Session = Depends(db_dep), acct=Depends(get_current_account)):
+    # membership check thường nằm trong FaceService/LockService tuỳ bạn
     try:
         res = FaceService(db, get_face_registry()).verify(
             lock_id=payload.lock_id,
@@ -124,7 +100,6 @@ async def verify(
             score=float(res["score"]),
             threshold_used=float(res["threshold_used"]),
         )
-
     except NotFoundError as e:
         raise http_404(str(e))
     except Exception as e:

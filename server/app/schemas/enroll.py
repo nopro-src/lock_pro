@@ -1,12 +1,25 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class EnrollIn(BaseModel):
     lock_id: int
-    account_id: int
+    account_id: int | None = None
+    target_account_id: int | None = None
+
     images_base64: list[str] = Field(min_length=5)
+
+    @model_validator(mode="after")
+    def _normalize(self):
+        # allow either account_id or target_account_id
+        if self.target_account_id is None and self.account_id is not None:
+            self.target_account_id = self.account_id
+
+        if self.target_account_id is None:
+            raise ValueError("Missing target_account_id (or account_id)")
+
+        return self
 
 
 class EnrollOut(BaseModel):

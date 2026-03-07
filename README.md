@@ -106,3 +106,4 @@ MQTT publish
 hoặc ESP32 gọi HTTP long-poll / WebSocket client
 mà không phải sửa logic verify/enroll.
 ```
+.\.venv\Scripts\Activate.ps1

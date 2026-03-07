@@ -1,56 +1,127 @@
-// owner/assets/users.js
-async function usersInit(){
+// web/owner/assets/users.js
+// Depends on: common.js (apiFetch, toast, setActiveNav), auth.js (guardAuth, loadMe)
+
+let _locksCache = [];
+
+async function usersInit() {
   guardAuth();
   setActiveNav("users");
+
   await loadMe();
-  await loadUsers();
+  await loadLocksToSelect();
+  await loadUsersTable();
 }
 
-async function loadUsers(){
+/** Modal controls (Tailwind modal) */
+function openUserModal() {
+  const m = document.getElementById("userModal");
+  if (m) m.classList.remove("hidden");
+}
+
+function closeUserModal() {
+  const m = document.getElementById("userModal");
+  if (m) m.classList.add("hidden");
+}
+
+/** Load locks into dropdown */
+async function loadLocksToSelect() {
+  const sel = document.getElementById("userLockId");
+  if (!sel) return;
+
+  const locks = await apiFetch("/api/locks");
+  _locksCache = Array.isArray(locks) ? locks : [];
+
+  sel.innerHTML =
+    `<option value="">-- Select lock --</option>` +
+    _locksCache
+      .map((l) => `<option value="${l.id}">${escapeHtml(l.name)} (#${l.id})</option>`)
+      .join("");
+
+  // default select first lock for convenience
+  if (_locksCache.length > 0 && !sel.value) {
+    sel.value = String(_locksCache[0].id);
+  }
+}
+
+/** Render users table */
+async function loadUsersTable() {
+  const tbody = document.getElementById("usersTbody");
+  if (!tbody) return;
+
   const rows = await apiFetch("/api/users?limit=200&offset=0");
-  const tb = document.getElementById("usersTbody");
-  tb.innerHTML = rows.map(u=> `
-    <tr class="border-b">
-      <td class="py-3">${u.id}</td>
-      <td class="py-3 font-medium">${u.full_name}</td>
-      <td class="py-3">${u.email}</td>
-      <td class="py-3">${u.global_role}</td>
-      <td class="py-3">${u.is_active ? `<span class="px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-medium">ACTIVE</span>` : `<span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">DISABLED</span>`}</td>
+  tbody.innerHTML = rows
+    .map(
+      (r) => `
+    <tr class="border-b border-slate-100">
+      <td class="py-3">${r.id}</td>
+      <td class="py-3 font-medium text-slate-900">${escapeHtml(r.full_name || "")}</td>
+      <td class="py-3">${escapeHtml(r.email)}</td>
+      <td class="py-3">${escapeHtml(r.global_role || "")}</td>
+      <td class="py-3">
+        <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${
+          r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+        }">
+          ${r.is_active ? "ACTIVE" : "DISABLED"}
+        </span>
+      </td>
     </tr>
-  `).join("");
+  `
+    )
+    .join("");
 }
 
-function openUserModal(){
-  document.getElementById("uEmail").value = "";
-  document.getElementById("uPass").value = "";
-  document.getElementById("uName").value = "";
-  document.getElementById("uRole").value = "USER";
-  document.getElementById("uActive").checked = true;
-  document.getElementById("userModal").classList.remove("hidden");
-}
-function closeUserModal(){ document.getElementById("userModal").classList.add("hidden"); }
+/** CREATE USER (Owner flow)
+ *  IMPORTANT: backend now REQUIRES lock_id
+ *  IMPORTANT: DO NOT send global_role here unless backend schema accepts it
+ */
+async function createUser() {
+  const emailEl = document.getElementById("uEmail");
+  const passEl = document.getElementById("uPass");
+  const nameEl = document.getElementById("uName");
+  const activeEl = document.getElementById("uActive");
+  const lockEl = document.getElementById("userLockId");
 
-async function createUser(){
-  const email = document.getElementById("uEmail").value.trim();
-  const password = document.getElementById("uPass").value;
-  const full_name = document.getElementById("uName").value.trim();
-  const global_role = document.getElementById("uRole").value;
-  const is_active = document.getElementById("uActive").checked;
+  const email = (emailEl?.value || "").trim();
+  const password = (passEl?.value || "").trim();
+  const full_name = (nameEl?.value || "").trim();
+  const is_active = activeEl ? !!activeEl.checked : true;
+  const lock_id = lockEl ? parseInt(lockEl.value, 10) : NaN;
 
-  if(password.length < 8){
-    toast("Password must be >= 8 chars", "warning");
-    return;
-  }
+  if (!email) return toast("Email là bắt buộc", "danger");
+  if (!password || password.length < 8) return toast("Password tối thiểu 8 ký tự", "danger");
+  if (!Number.isFinite(lock_id) || lock_id <= 0) return toast("Bạn phải chọn Lock", "danger");
 
-  try{
-    await apiFetch("/api/users", {
-      method:"POST",
-      body: JSON.stringify({email, password, full_name, is_active, global_role})
-    });
-    toast("User created", "success");
+  const body = { email, password, full_name, is_active, lock_id };
+
+  try {
+    await apiFetch("/api/users", { method: "POST", body: JSON.stringify(body) });
+    toast("Tạo user thành công", "success");
+
+    // reset form (giữ lock)
+    if (emailEl) emailEl.value = "";
+    if (passEl) passEl.value = "";
+    if (nameEl) nameEl.value = "";
+    if (activeEl) activeEl.checked = true;
+
+    await loadUsersTable();
     closeUserModal();
-    await loadUsers();
-  }catch(e){
-    toast("Create failed: " + e.message, "danger");
+  } catch (e) {
+    toast(String(e?.message || e), "danger");
   }
-}   
+}
+
+/** helpers */
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+// expose for HTML onclick / onload
+window.usersInit = usersInit;
+window.openUserModal = openUserModal;
+window.closeUserModal = closeUserModal;
+window.createUser = createUser;

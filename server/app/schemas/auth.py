@@ -17,7 +17,6 @@ class LoginIn(BaseModel):
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    # helpful for UI routing
     global_role: str
 
 

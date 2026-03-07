@@ -16,7 +16,6 @@ def get_face_registry() -> FaceEngineRegistry:
     global _registry
     if _registry is None:
         reg = FaceEngineRegistry()
-        # register default engine; may raise if optional deps missing
         reg.register(InsightFaceArcFaceBuffaloL(model_key=settings.FACE_MODEL_KEY))
         _registry = reg
     return _registry

@@ -48,14 +48,16 @@ class UserService:
             is_active=is_active,
             global_role=GlobalRole.USER,
         )
+        self.db.flush()  # đảm bảo acct.id có ngay
 
-        # 4) add membership: USER
-        # NOTE: nếu LockMemberRepo.create() của bạn check trùng thì ok
-        self.members.create(
-            lock_id=lock_id,
-            account_id=acct.id,
-            role=LockRole.USER,
-        )
+        # 4) add membership: USER (idempotent)
+        existing = self.members.get_member(lock_id=lock_id, account_id=acct.id)
+        if not existing:
+            self.members.add_member(
+                lock_id=lock_id,
+                account_id=acct.id,
+                role=LockRole.USER,
+            )
 
         self.db.commit()
         return acct

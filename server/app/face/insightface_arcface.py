@@ -6,15 +6,6 @@ from app.face.engine_base import FaceEngineBase
 
 
 class InsightFaceArcFaceBuffaloL(FaceEngineBase):
-    """
-    Default production engine: InsightFace ArcFace buffalo_l.
-
-    Notes:
-    - Requires optional deps:
-        insightface, onnxruntime
-    - We load FaceAnalysis and use get() to detect & embed.
-    """
-
     def __init__(self, model_key: str = "insightface_arcface_buffalo_l_v1"):
         self._model_key = model_key
         self._app = None

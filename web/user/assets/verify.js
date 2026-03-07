@@ -48,7 +48,7 @@ async function doVerify(){
     });
 
     document.getElementById("result").textContent = JSON.stringify(out, null, 2);
-    toast(out.success ? "Unlocked ✅" : "Denied ❌", out.success ? "success" : "danger");
+    toast(out.success ? "Unlocked" : "Denied", out.success ? "success" : "danger");
   }catch(e){
     toast("Verify failed: " + e.message, "danger");
   }
