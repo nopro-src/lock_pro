@@ -69,3 +69,23 @@ class LockService:
             if l and l.owner_id != account_id:
                 extra.append(l)
         return owned + extra
+    # #new
+    # def list_locks_dashboard(self, db, owner_id: int):
+    #     locks = self.lock_repo.list_by_owner(db, owner_id)
+    #     result = []
+
+    #     for lock in locks:
+    #         device = self.device_repo.get_by_lock_id(db, lock.id)
+    #         member_count = self.lock_member_repo.count_by_lock_id(db, lock.id)
+
+    #         result.append({
+    #             "id": lock.id,
+    #             "name": lock.name,
+    #             "location": getattr(lock, "location", None),
+    #             "status": getattr(lock, "status", "active"),
+    #             "device_status": getattr(device, "status", None) if device else "offline",
+    #             "last_seen_at": getattr(device, "last_seen_at", None) if device else None,
+    #             "member_count": member_count,
+    #         })
+
+    #     return result

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 from app.models.lock_member import LockRole
+from typing import Optional
+from datetime import datetime
 
 
 class LockCreateIn(BaseModel):
@@ -28,3 +30,11 @@ class MemberOut(BaseModel):
     lock_id: int
     account_id: int
     role: LockRole
+# class LockDashboardOut(BaseModel):
+#     id: int
+#     name: str
+#     location: Optional[str] = None
+#     status: Optional[str] = None
+#     device_status: Optional[str] = None
+#     last_seen_at: Optional[datetime] = None
+#     member_count: int = 0

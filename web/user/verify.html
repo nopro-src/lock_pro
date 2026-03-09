@@ -1,60 +1,279 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Verify — User</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="/user/assets/styles.css" rel="stylesheet"/>
+  <link href="/user/assets/styles.css?v=777" rel="stylesheet" />
 </head>
-<body class="bg-slate-50" onload="verifyInit()">
+
+<body class="bg-slate-100 text-slate-800" onload="verifyInitPage()">
   <div class="min-h-screen">
-    <header class="bg-white border-b border-slate-100">
-      <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div>
-          <div class="font-semibold text-slate-900">Smart Lock Face Pro</div>
-          <div class="text-xs text-slate-500">User Verify</div>
+    <header class="user-topbar sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="user-brand-badge w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
+            SL
+          </div>
+          <div>
+            <div class="font-semibold text-slate-900">Smart Lock Face Pro</div>
+            <div class="text-xs text-slate-500">User Verify Console</div>
+          </div>
         </div>
-        <div class="text-sm text-slate-600">
-          <span data-me="full_name"></span> • <button onclick="logout()" class="text-blue-600 hover:underline">Logout</button>
+
+        <div class="text-sm text-slate-600 flex items-center gap-2">
+          <span data-me="full_name" class="font-medium text-slate-800"></span>
+          <span class="text-slate-400">•</span>
+          <button onclick="logout()" class="text-blue-600 hover:underline">Logout</button>
         </div>
       </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-6 py-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <section class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-          <div class="flex items-center justify-between mb-3">
-            <div class="font-semibold text-slate-900">Unlock with Face</div>
-            <select id="lockSel" class="px-3 py-2 rounded-xl border border-slate-200"></select>
+    <main class="max-w-7xl mx-auto px-6 py-6 lg:py-8">
+      <div class="mb-6 rounded-3xl bg-white border border-slate-200 shadow-sm p-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div class="text-3xl font-bold tracking-tight text-slate-900">Unlock with Face</div>
+            <div class="mt-2 text-sm text-slate-500">
+              Select your lock, capture a live face image, and verify identity.
+            </div>
           </div>
 
-          <div class="bg-slate-50 rounded-2xl border border-slate-100 p-3">
-            <video id="cam" autoplay playsinline class="w-full rounded-xl bg-black/5"></video>
-            <div class="flex flex-wrap gap-2 mt-3">
-              <button onclick="camStart()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Start Camera</button>
-              <button onclick="camStop()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Stop</button>
-              <button onclick="doVerify()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-medium">Capture & Verify</button>
+          <div>
+            <span id="verifyStatusBadge"
+              class="inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-slate-50 text-slate-700 font-semibold border border-slate-200">
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+              Ready to verify
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section class="xl:col-span-2 user-shell-card p-5">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div>
+              <div class="text-lg font-semibold text-slate-900">Live Face Verification</div>
+              <div class="text-sm text-slate-500">Use webcam to capture a single face image for matching</div>
+            </div>
+
+            <div class="w-full md:w-72">
+              <select id="lockSel" class="user-select"></select>
+            </div>
+          </div>
+
+          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div class="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900/5">
+              <video id="cam" autoplay playsinline class="w-full aspect-video object-cover bg-slate-100"></video>
+              <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div
+                  class="w-[42%] h-[60%] rounded-[40px] border-2 border-white/80 shadow-[0_0_0_9999px_rgba(15,23,42,0.18)]">
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mt-4">
+              <button onclick="camStartAndUpdate()" class="user-btn-secondary">Start Camera</button>
+              <button onclick="camStopAndUpdate()" class="user-btn-secondary">Stop</button>
+              <button id="verifyBtn" onclick="doVerifyWithFeedback()" class="user-btn-success">
+                <span id="verifyBtnText">Capture & Verify</span>
+              </button>
             </div>
           </div>
 
           <canvas id="canvas" class="hidden"></canvas>
         </section>
 
-        <section class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-          <div class="font-semibold text-slate-900 mb-2">Result</div>
-          <pre id="result" class="text-xs text-slate-700 whitespace-pre-wrap"></pre>
-          <div class="text-xs text-slate-400 mt-3">
-            If success, backend creates OPEN command. ESP32 later just consumes it.
+        <section class="space-y-6">
+          <div class="user-shell-card overflow-hidden">
+            <div class="user-section-head px-5 py-4">
+              <div class="text-lg font-semibold text-slate-900">Verification Summary</div>
+            </div>
+            <div class="p-5">
+              <div id="verifyStatusBox"
+                class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                No verification has been performed yet.
+              </div>
+
+              <div class="grid grid-cols-1 gap-3 mt-4">
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="text-xs text-slate-500">Matched</div>
+                  <div id="summaryMatched" class="mt-1 text-base font-semibold text-slate-800">—</div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="text-xs text-slate-500">Score</div>
+                  <div id="summaryScore" class="mt-1 text-base font-semibold text-slate-800">—</div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="text-xs text-slate-500">Threshold</div>
+                  <div id="summaryThreshold" class="mt-1 text-base font-semibold text-slate-800">—</div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="text-xs text-slate-500">Matched Account ID</div>
+                  <div id="summaryMatchedAccount" class="mt-1 text-base font-semibold text-slate-800">—</div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="text-xs text-slate-500">Backend Result</div>
+                  <div id="summaryResult" class="mt-1 text-base font-semibold text-slate-800">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="user-shell-card overflow-hidden">
+            <div class="user-section-head px-5 py-4">
+              <div class="text-lg font-semibold text-slate-900">Raw Response</div>
+            </div>
+            <div class="p-5">
+              <pre id="result"
+                class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs leading-6 text-slate-700 whitespace-pre-wrap break-words overflow-x-auto min-h-[180px]"></pre>
+            </div>
           </div>
         </section>
       </div>
     </main>
   </div>
 
-  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <div id="toastArea" class="fixed bottom-5 right-5 w-80 space-y-3 z-50"></div>
+
   <script src="/user/assets/common.js"></script>
   <script src="/user/assets/auth.js"></script>
-  <script src="/user/assets/verify.js"></script>
+  <script src="/user/assets/verify.js?v=777"></script>
+  <script>
+    console.log("VERIFY_HTML_VERSION = NEW_V2");
+
+    function setVerifyUiState(state, message = "") {
+      const btn = document.getElementById("verifyBtn");
+      const btnText = document.getElementById("verifyBtnText");
+      const badge = document.getElementById("verifyStatusBadge");
+      const box = document.getElementById("verifyStatusBox");
+
+      if (!btn || !btnText || !badge || !box) return;
+
+      if (state === "loading") {
+        btn.disabled = true;
+        btnText.textContent = "Verifying...";
+        badge.className = "inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-200";
+        badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>Verifying...';
+        box.className = "rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700";
+        box.textContent = message || "Sending verification request...";
+        return;
+      }
+
+      if (state === "success") {
+        btn.disabled = false;
+        btnText.textContent = "Capture & Verify";
+        badge.className = "inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200";
+        badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Verification success';
+        box.className = "rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700";
+        box.textContent = message || "Face verified successfully.";
+        return;
+      }
+
+      if (state === "error") {
+        btn.disabled = false;
+        btnText.textContent = "Capture & Verify";
+        badge.className = "inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-200";
+        badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>Verification failed';
+        box.className = "rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700";
+        box.textContent = message || "Verification failed.";
+        return;
+      }
+
+      btn.disabled = false;
+      btnText.textContent = "Capture & Verify";
+      badge.className = "inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-slate-50 text-slate-700 font-semibold border border-slate-200";
+      badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>Ready to verify';
+      box.className = "rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600";
+      box.textContent = message || "No verification has been performed yet.";
+    }
+
+    function fillSummary(result) {
+      const matchedValue =
+        result?.matched ??
+        (result?.matched_account_id != null ? true : undefined) ??
+        result?.success ??
+        "—";
+
+      const scoreValue =
+        result?.score ??
+        result?.best_score ??
+        "—";
+
+      const thresholdValue =
+        result?.threshold ??
+        result?.threshold_used ??
+        "—";
+
+      const matchedAccountValue =
+        result?.matched_account_id ??
+        "—";
+
+      const backendResultValue =
+        result?.result ??
+        (result?.success === true ? "SUCCESS" : result?.success === false ? "FAILED" : "—");
+
+      document.getElementById("summaryMatched").textContent = matchedValue;
+      document.getElementById("summaryScore").textContent = scoreValue;
+      document.getElementById("summaryThreshold").textContent = thresholdValue;
+      document.getElementById("summaryMatchedAccount").textContent = matchedAccountValue;
+      document.getElementById("summaryResult").textContent = backendResultValue;
+    }
+
+    async function doVerifyWithFeedback() {
+      try {
+        const result = await doVerify();
+        console.log("VERIFY_RESULT =", result);
+
+        document.getElementById("result").textContent = JSON.stringify(result, null, 2);
+        fillSummary(result);
+
+        const isMatched =
+          result?.matched === true ||
+          result?.success === true ||
+          result?.result === "MATCH" ||
+          result?.result === "SUCCESS" ||
+          result?.matched_account_id != null;
+
+        if (isMatched) {
+          setVerifyUiState("success", "Face verified successfully.");
+          toast("Verify successful", "success");
+        } else {
+          setVerifyUiState("error", "Face not matched or unlock request was rejected.");
+          toast("Verify failed", "danger");
+        }
+
+        return result;
+      } catch (e) {
+        console.error("VERIFY_ERROR =", e);
+        setVerifyUiState("error", e?.message || "Verification failed.");
+        fillSummary({});
+        document.getElementById("result").textContent = "";
+        toast("Verify failed: " + (e?.message || "Unknown error"), "danger");
+        throw e;
+      }
+    }
+
+    async function camStartAndUpdate() {
+      await camStart();
+    }
+
+    function camStopAndUpdate() {
+      camStop();
+    }
+
+    async function verifyInitPage() {
+      await verifyInit();
+      setVerifyUiState("idle");
+    }
+  </script>
 </body>
+
 </html>

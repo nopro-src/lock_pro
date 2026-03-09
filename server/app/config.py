@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+
+BASE_DIR = Path(__file__).resolve().parents[2]   # smart-lock-face-pro/
+WEB_DIR = BASE_DIR / "web"
 
 
 class Settings(BaseSettings):
@@ -30,14 +34,14 @@ class Settings(BaseSettings):
     QUALITY_MIN_BRIGHTNESS: float = Field(default=60.0)
     QUALITY_MAX_BRIGHTNESS: float = Field(default=200.0)
     QUALITY_MIN_FACE_AREA_RATIO: float = Field(default=0.05)
-    QUALITY_MAX_BLUR_LAPLACIAN_VAR: float = Field(default=80.0)
+    QUALITY_MIN_LAPLACIAN_VAR: float = Field(default=80.0)
     QUALITY_MAX_POSE_YAW_DEG: float = Field(default=25.0)
     QUALITY_MAX_POSE_PITCH_DEG: float = Field(default=20.0)
 
-    # Web (legacy + new split UIs)
-    STATIC_ADMIN_DIR: str = Field(default="../web/admin")
-    STATIC_OWNER_DIR: str = Field(default="../web/owner")
-    STATIC_USER_DIR: str = Field(default="../web/user")
+    # Web static dirs
+    STATIC_ADMIN_DIR: str = str(WEB_DIR / "admin")
+    STATIC_OWNER_DIR: str = str(WEB_DIR / "owner")
+    STATIC_USER_DIR: str = str(WEB_DIR / "user")
 
     # Device / transport
     DEVICE_TRANSPORT: str = Field(default="mqtt_stub")  # mqtt_stub | mqtt | http

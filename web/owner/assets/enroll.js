@@ -1,4 +1,3 @@
-// owner/assets/enroll.js
 let camStream = null;
 let shots = [];
 
@@ -14,7 +13,11 @@ async function enrollInit() {
 async function loadLocks() {
   const locks = await apiFetch("/api/locks");
   const sel = document.getElementById("lockSel");
-  sel.innerHTML = locks.map(l => `<option value="${l.id}">${escapeHtml(l.name)} (#${l.id})</option>`).join("");
+  if (!sel) return;
+
+  sel.innerHTML = locks
+    .map((l) => `<option value="${l.id}">${escapeHtml(l.name)} (#${l.id})</option>`)
+    .join("");
 }
 
 async function loadUsersToSelect() {
@@ -25,54 +28,104 @@ async function loadUsersToSelect() {
   sel.innerHTML =
     `<option value="">-- Select user --</option>` +
     users
-      .filter(u => (u.global_role || "").toUpperCase() === "USER")
-      .map(u => `<option value="${u.id}">${escapeHtml(u.full_name || "")} (#${u.id}) - ${escapeHtml(u.email)}</option>`)
+      .filter((u) => (u.global_role || "").toUpperCase() === "USER")
+      .map(
+        (u) =>
+          `<option value="${u.id}">${escapeHtml(u.full_name || "")} (#${u.id}) - ${escapeHtml(u.email)}</option>`
+      )
       .join("");
 }
 
 async function camStart() {
   try {
     if (camStream) return;
+
+    const video = document.getElementById("cam");
+    if (!video) throw new Error("Camera element not found");
+
     camStream = await navigator.mediaDevices.getUserMedia({
       video: { width: 960, height: 540 },
       audio: false,
     });
-    document.getElementById("cam").srcObject = camStream;
+
+    video.srcObject = camStream;
     toast("Camera started", "success");
   } catch (e) {
     toast("Camera error: " + e.message, "danger");
+    throw e;
   }
 }
 
 function camStop() {
-  if (!camStream) return;
-  camStream.getTracks().forEach(t => t.stop());
-  camStream = null;
-  document.getElementById("cam").srcObject = null;
+  const video = document.getElementById("cam");
+
+  if (camStream) {
+    camStream.getTracks().forEach((t) => t.stop());
+    camStream = null;
+  }
+
+  if (video) {
+    video.srcObject = null;
+  }
 }
 
 function captureShot() {
   const v = document.getElementById("cam");
+  const c = document.getElementById("canvas");
+
+  if (!v || !c) {
+    toast("Camera or canvas not found", "danger");
+    return;
+  }
+
   if (!camStream || !v.videoWidth) {
     toast("Start camera first", "warning");
     return;
   }
-  const c = document.getElementById("canvas");
-  c.width = v.videoWidth;
-  c.height = v.videoHeight;
+
+  if (shots.length >= 5) {
+    toast("Already captured 5 shots", "warning");
+    return;
+  }
+
   const ctx = c.getContext("2d");
-  ctx.drawImage(v, 0, 0, c.width, c.height);
+  if (!ctx) {
+    toast("Canvas context unavailable", "danger");
+    return;
+  }
+
+  // Crop theo cùng tỉ lệ với user verify overlay
+  const srcW = v.videoWidth;
+  const srcH = v.videoHeight;
+
+  const cropW = Math.floor(srcW * 0.42);
+  const cropH = Math.floor(srcH * 0.60);
+  const cropX = Math.floor((srcW - cropW) / 2);
+  const cropY = Math.floor((srcH - cropH) / 2);
+
+  c.width = cropW;
+  c.height = cropH;
+
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.drawImage(
+    v,
+    cropX, cropY, cropW, cropH,
+    0, 0, c.width, c.height
+  );
+
   shots.push(c.toDataURL("image/jpeg", 0.92));
   updateShotsUI();
 }
 
 async function autoCapture5() {
   await camStart();
+
   shots = [];
   updateShotsUI();
+
   for (let i = 0; i < 5; i++) {
     captureShot();
-    await new Promise(r => setTimeout(r, 450));
+    await new Promise((r) => setTimeout(r, 500));
   }
 }
 
@@ -82,10 +135,26 @@ function clearShots() {
 }
 
 function updateShotsUI() {
-  document.getElementById("shotCount").textContent = String(shots.length);
+  const countEl = document.getElementById("shotCount");
   const box = document.getElementById("shotsBox");
+
+  if (countEl) {
+    countEl.textContent = String(shots.length);
+  }
+
+  if (!box) return;
+
   box.innerHTML = shots
-    .map((_, i) => `<span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs">Shot ${i + 1}</span>`)
+    .map(
+      (src, i) => `
+        <div class="relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
+          <img src="${src}" alt="Shot ${i + 1}" class="w-full h-full object-cover"/>
+          <div class="absolute left-2 bottom-2 text-[10px] px-2 py-1 rounded-full bg-slate-900/75 text-white">
+            ${i + 1}
+          </div>
+        </div>
+      `
+    )
     .join("");
 }
 
@@ -106,48 +175,40 @@ async function readFilesAsBase64(files) {
 async function doEnroll() {
   const lock_id = parseInt(document.getElementById("lockSel").value, 10);
 
-  // Prefer dropdown
   const userSel = document.getElementById("userSel");
   let target_account_id = userSel ? parseInt(userSel.value || "", 10) : NaN;
 
-  // Fallback manual input if you keep it
   if (!Number.isFinite(target_account_id)) {
     const manual = document.getElementById("accountId");
     target_account_id = parseInt((manual?.value || "").trim(), 10);
   }
 
   if (!Number.isFinite(target_account_id) || target_account_id <= 0) {
-    toast("Missing account_id: hãy chọn user hoặc nhập Account ID", "danger");
-    return;
+    throw new Error("Missing account_id: hãy chọn user hoặc nhập Account ID");
   }
 
   let images = shots.slice(0, 5);
-  const files = document.getElementById("files").files;
+  const files = document.getElementById("files")?.files;
+
   if (images.length < 5 && files && files.length >= 5) {
     images = await readFilesAsBase64(Array.from(files).slice(0, 5));
   }
+
   if (images.length < 5) {
-    toast("Need 5 images (webcam shots or files)", "warning");
-    return;
+    throw new Error("Need 5 images (webcam shots or files)");
   }
 
-  try {
-    // ✅ gửi theo chuẩn mới: target_account_id
-    // backend vẫn hiểu cả account_id và target_account_id
-    const out = await apiFetch("/api/enroll", {
-      method: "POST",
-      body: JSON.stringify({
-        lock_id,
-        target_account_id,
-        images_base64: images,
-      }),
-    });
+  const out = await apiFetch("/api/enroll", {
+    method: "POST",
+    body: JSON.stringify({
+      lock_id,
+      target_account_id,
+      images_base64: images,
+    }),
+  });
 
-    toast(`Enroll OK template=${out.template_id} quality=${out.quality_score.toFixed(2)}`, "success");
-    clearShots();
-  } catch (e) {
-    toast("Enroll failed: " + (e?.message || e), "danger");
-  }
+  clearShots();
+  return out;
 }
 
 function escapeHtml(s) {

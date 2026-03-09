@@ -1,45 +1,102 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>User Login — Smart Lock Face Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="/user/assets/styles.css" rel="stylesheet"/>
+  <link href="/user/assets/styles.css?v=2" rel="stylesheet" />
 </head>
-<body class="min-h-screen bg-slate-50">
-  <div class="min-h-screen flex items-center justify-center p-6">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-6">
-      <div class="mb-6">
-        <div class="text-xl font-semibold text-slate-900">Smart Lock Face Pro</div>
-        <div class="text-sm text-slate-500">User Console</div>
+
+<body class="min-h-screen bg-slate-100">
+  <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+    <!-- Left intro -->
+    <section
+      class="hidden lg:flex flex-col justify-between bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white p-10">
+      <div>
+        <div class="flex items-center gap-3">
+          <div
+            class="user-brand-badge w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
+            SL
+          </div>
+          <div>
+            <div class="text-xl font-semibold tracking-tight">Smart Lock Face Pro</div>
+            <div class="text-sm text-slate-300">User Console</div>
+          </div>
+        </div>
+
+        <div class="mt-16 max-w-md">
+          <div class="text-4xl font-bold leading-tight tracking-tight">
+            Face unlock experience built for daily access
+          </div>
+          <div class="mt-4 text-slate-300 text-base leading-7">
+            Sign in to access the user verification console, start camera capture, and unlock your assigned smart lock
+            securely.
+          </div>
+        </div>
       </div>
 
-      <div class="space-y-3">
-        <div>
-          <label class="text-sm text-slate-600">Email</label>
-          <input id="email" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                 placeholder="user@example.com"/>
+      <div class="grid grid-cols-1 gap-4 max-w-md">
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-5">
+          <div class="text-sm text-slate-300">Fast access</div>
+          <div class="mt-1 text-lg font-semibold">Real-time verify flow</div>
         </div>
-        <div>
-          <label class="text-sm text-slate-600">Password</label>
-          <input id="password" type="password" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                 placeholder="********"/>
-        </div>
-        <button onclick="userLogin()"
-                class="w-full mt-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700">
-          Sign in
-        </button>
-
-        <div class="text-xs text-slate-500 mt-2">
-          Dev seed: user@example.com / User123456
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-5">
+          <div class="text-sm text-slate-300">Security layer</div>
+          <div class="mt-1 text-lg font-semibold">Face matching + lock command flow</div>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- Right login -->
+    <section class="flex items-center justify-center p-6 lg:p-10">
+      <div class="w-full max-w-md user-shell-card p-6 lg:p-8">
+        <div class="mb-8">
+          <div class="flex items-center gap-3 mb-4 lg:hidden">
+            <div
+              class="user-brand-badge w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
+              SL
+            </div>
+            <div>
+              <div class="text-lg font-semibold text-slate-900">Smart Lock Face Pro</div>
+              <div class="text-sm text-slate-500">User Console</div>
+            </div>
+          </div>
+
+          <div class="text-2xl font-bold tracking-tight text-slate-900">Sign in</div>
+          <div class="mt-2 text-sm text-slate-500">
+            Access your verification workspace
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm text-slate-600">Email</label>
+            <input id="email" class="user-input mt-1" placeholder="user@example.com" />
+          </div>
+
+          <div>
+            <label class="text-sm text-slate-600">Password</label>
+            <input id="password" type="password" class="user-input mt-1" placeholder="********" />
+          </div>
+
+          <button onclick="userLogin()" class="user-btn-primary w-full">
+            Sign in
+          </button>
+
+          <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-xs text-slate-500 leading-6">
+            Dev seed: <span class="font-medium text-slate-700">user@example.com / User123456</span>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <div id="toastArea" class="fixed bottom-5 right-5 w-80 space-y-3 z-50"></div>
+
   <script src="/user/assets/common.js"></script>
   <script src="/user/assets/auth.js"></script>
 </body>
+
 </html>

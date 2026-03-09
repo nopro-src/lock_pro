@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -33,9 +35,27 @@ app.include_router(face.router)
 app.include_router(logs.router)
 app.include_router(system.router)
 
-# Static UIs
-app.mount("/owner", StaticFiles(directory=settings.STATIC_OWNER_DIR, html=True), name="owner")
-app.mount("/user", StaticFiles(directory=settings.STATIC_USER_DIR, html=True), name="user")
+# -----------------------------
+# Static UI directories
+# -----------------------------
+BASE_DIR = Path(__file__).resolve().parents[2]   # smart-lock-face-pro/
+WEB_DIR = BASE_DIR / "web"
+OWNER_DIR = WEB_DIR / "owner"
+USER_DIR = WEB_DIR / "user"
+
+print("MAIN FILE =", __file__)
+print("BASE_DIR  =", BASE_DIR)
+print("WEB_DIR   =", WEB_DIR)
+print("OWNER_DIR =", OWNER_DIR)
+print("USER_DIR  =", USER_DIR)
+print("OWNER DIR EXISTS =", OWNER_DIR.exists())
+print("USER DIR EXISTS  =", USER_DIR.exists())
+print("OWNER CSS EXISTS =", (OWNER_DIR / "assets" / "styles.css").exists())
+print("USER CSS EXISTS  =", (USER_DIR / "assets" / "styles.css").exists())
+
+# Mount static UIs directly from /web
+app.mount("/owner", StaticFiles(directory=str(OWNER_DIR), html=True), name="owner")
+app.mount("/user", StaticFiles(directory=str(USER_DIR), html=True), name="user")
 
 
 @app.get("/")
@@ -66,21 +86,46 @@ async def ws_endpoint(ws: WebSocket):
     conn = await ws_manager.connect(ws, account_id=account_id)
 
     try:
-        await ws.send_json(WsEvent(type="INFO", lock_id=None, payload={"msg": "connected"}).model_dump())
+        await ws.send_json(
+            WsEvent(
+                type="INFO",
+                lock_id=None,
+                payload={"msg": "connected"}
+            ).model_dump()
+        )
 
         while True:
             msg = await ws.receive_json()
+
             if msg.get("action") == "join":
                 try:
                     lock_id = int(msg.get("lock_id"))
                 except Exception:
-                    await ws.send_json(WsEvent(type="ERROR", lock_id=None, payload={"msg": "invalid_lock_id"}).model_dump())
+                    await ws.send_json(
+                        WsEvent(
+                            type="ERROR",
+                            lock_id=None,
+                            payload={"msg": "invalid_lock_id"}
+                        ).model_dump()
+                    )
                     continue
 
                 await ws_manager.join_lock_room(conn, lock_id)
-                await ws.send_json(WsEvent(type="INFO", lock_id=lock_id, payload={"msg": "joined"}).model_dump())
+                await ws.send_json(
+                    WsEvent(
+                        type="INFO",
+                        lock_id=lock_id,
+                        payload={"msg": "joined"}
+                    ).model_dump()
+                )
             else:
-                await ws.send_json(WsEvent(type="ERROR", lock_id=None, payload={"msg": "unknown_action"}).model_dump())
+                await ws.send_json(
+                    WsEvent(
+                        type="ERROR",
+                        lock_id=None,
+                        payload={"msg": "unknown_action"}
+                    ).model_dump()
+                )
 
     except WebSocketDisconnect:
         pass

@@ -1,96 +1,393 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Enroll — Owner</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="/owner/assets/styles.css" rel="stylesheet"/>
+  <link href="/owner/assets/styles.css?v=4" rel="stylesheet" />
 </head>
-<body class="bg-slate-50" onload="enrollInit()">
+
+<body class="bg-slate-100 text-slate-800" onload="enrollInitPage()">
   <div class="flex min-h-screen">
-    <aside class="w-64 bg-white border-r border-slate-100 p-4">
-      <div class="mb-6">
-        <div class="font-semibold text-slate-900">Smart Lock Face Pro</div>
-        <div class="text-xs text-slate-500">Owner Console</div>
+    <!-- Sidebar -->
+    <aside class="w-64 owner-sidebar text-slate-200 border-r border-slate-800 shadow-xl flex flex-col">
+      <div class="px-6 py-6 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div
+            class="owner-brand-badge w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
+            SL
+          </div>
+          <div>
+            <div class="font-semibold text-white text-lg tracking-tight">Smart Lock Face Pro</div>
+            <div class="text-xs text-slate-400">Owner Console</div>
+          </div>
+        </div>
       </div>
-      <nav class="space-y-1">
-        <a data-nav="dashboard" href="/owner/dashboard.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Dashboard</a>
-        <a data-nav="locks" href="/owner/locks.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Locks</a>
-        <a data-nav="users" href="/owner/users.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Users</a>
-        <a data-nav="enroll" href="/owner/enroll.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Enroll</a>
-        <a data-nav="logs" href="/owner/logs.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Logs</a>
-        <a data-nav="settings" href="/owner/settings.html" class="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50">Settings</a>
+
+      <nav class="flex-1 p-4 space-y-2">
+        <a data-nav="dashboard" href="/owner/dashboard.html" class="owner-nav-item">
+          <span class="owner-nav-dot bg-blue-400"></span>Dashboard
+        </a>
+        <a data-nav="locks" href="/owner/locks.html" class="owner-nav-item">
+          <span class="owner-nav-dot bg-cyan-400"></span>Locks
+        </a>
+        <a data-nav="users" href="/owner/users.html" class="owner-nav-item">
+          <span class="owner-nav-dot bg-emerald-400"></span>Users
+        </a>
+        <a data-nav="enroll" href="/owner/enroll.html" class="owner-nav-item">
+          <span class="owner-nav-dot bg-violet-400"></span>Enroll
+        </a>
+        <a data-nav="logs" href="/owner/logs.html" class="owner-nav-item">
+          <span class="owner-nav-dot bg-amber-400"></span>Logs
+        </a>
+        <a data-nav="settings" href="/owner/settings.html" class="owner-nav-item">
+          <span class="owner-nav-dot bg-rose-400"></span>Settings
+        </a>
       </nav>
-      <button onclick="logout()" class="mt-6 w-full px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700">Logout</button>
+
+      <div class="p-4 border-t border-slate-800">
+        <button onclick="logout()"
+          class="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 hover:text-white transition-all">
+          Logout
+        </button>
+      </div>
     </aside>
 
-    <main class="flex-1 p-6">
-      <div class="mb-6">
-        <div class="text-xl font-semibold text-slate-900">Enroll Face Templates</div>
-        <div class="text-sm text-slate-500">Capture 5 images (webcam) or upload from disk</div>
+    <!-- Main -->
+    <main class="flex-1 p-6 lg:p-8">
+      <!-- Header -->
+      <div class="mb-6 rounded-3xl bg-white border border-slate-200 shadow-sm p-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div class="text-3xl font-bold tracking-tight text-slate-900">Enroll Face Templates</div>
+            <div class="mt-2 text-sm text-slate-500">
+              Capture 5 aligned face images or upload 5 images for enrollment
+            </div>
+          </div>
+
+          <div>
+            <span id="enrollStatusBadge"
+              class="inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-slate-50 text-slate-700 font-semibold border border-slate-200">
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+              Ready to enroll
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <section class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <!-- Main area -->
+        <section class="xl:col-span-2 owner-shell-card p-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
             <div>
               <label class="text-sm text-slate-600">Lock</label>
-              <select id="lockSel" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200"></select>
+              <select id="lockSel" class="owner-select mt-1"></select>
             </div>
+
             <div>
               <label class="text-sm text-slate-600">User to enroll</label>
-              <select id="userSel" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200">
+              <select id="userSel" class="owner-select mt-1">
                 <option value="">-- Select user --</option>
               </select>
               <div class="text-xs text-slate-400 mt-1">Chọn user đã tạo ở mục Users.</div>
             </div>
           </div>
 
-          <div class="bg-slate-50 rounded-2xl border border-slate-100 p-3">
-            <video id="cam" autoplay playsinline class="w-full rounded-xl bg-black/5"></video>
-            <div class="flex flex-wrap gap-2 mt-3">
-              <button onclick="camStart()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Start Camera</button>
-              <button onclick="camStop()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Stop</button>
-              <button onclick="captureShot()" class="px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Capture 1</button>
-              <button onclick="autoCapture5()" class="px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Auto 5</button>
-              <button onclick="clearShots()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white">Clear</button>
+          <!-- Camera area -->
+          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <div>
+                <div class="text-lg font-semibold text-slate-900">Live Enrollment Capture</div>
+                <div class="text-sm text-slate-500">Use the same face frame guide as user verify for consistency</div>
+              </div>
+
+              <div
+                class="text-xs px-3 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-200 font-medium">
+                5 shots required
+              </div>
             </div>
-            <div class="mt-3 text-sm text-slate-600">
-              Shots: <span id="shotCount">0</span>/5
+
+            <div class="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900/5">
+              <video id="cam" autoplay playsinline class="w-full aspect-video object-cover bg-slate-100"></video>
+
+              <!-- Same overlay as verify -->
+              <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div
+                  class="w-[42%] h-[60%] rounded-[40px] border-2 border-white/80 shadow-[0_0_0_9999px_rgba(15,23,42,0.18)]">
+                </div>
+              </div>
+
+              <div class="absolute left-4 top-4">
+                <span
+                  class="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/90 text-slate-700 border border-slate-200 font-medium shadow-sm">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  Live camera
+                </span>
+              </div>
             </div>
-            <div id="shotsBox" class="flex flex-wrap gap-2 mt-2"></div>
+
+            <div class="flex flex-wrap gap-2 mt-4">
+              <button onclick="camStartAndUpdate()" class="owner-btn-secondary">Start Camera</button>
+              <button onclick="camStopAndUpdate()" class="owner-btn-secondary">Stop</button>
+              <button onclick="captureShotAndUpdate()" class="owner-btn-primary">Capture 1</button>
+              <button onclick="autoCapture5AndUpdate()" class="owner-btn-primary">Auto 5</button>
+              <button onclick="clearShotsAndUpdate()" class="owner-btn-secondary">Clear</button>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="text-xs text-slate-500">Camera Status</div>
+                <div id="cameraStatusText" class="mt-1 text-sm font-semibold text-slate-800">Idle</div>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="text-xs text-slate-500">Collected Shots</div>
+                <div id="shotCount" class="mt-1 text-sm font-semibold text-slate-800">0</div>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="text-xs text-slate-500">Enrollment State</div>
+                <div id="enrollStateText" class="mt-1 text-sm font-semibold text-slate-800">Ready</div>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <div class="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+                <div id="shotProgress" class="h-full w-0 bg-gradient-to-r from-blue-600 to-cyan-500 transition-all">
+                </div>
+              </div>
+            </div>
+
+            <div id="shotsBox" class="flex flex-wrap gap-3 mt-4"></div>
           </div>
 
-          <div class="mt-4">
-            <label class="text-sm text-slate-600">Or upload 5 images</label>
-            <input id="files" type="file" multiple accept="image/*" class="mt-1 w-full"/>
-            <div class="text-xs text-slate-400 mt-1">Pick at least 5 images.</div>
+          <!-- Upload -->
+          <div class="mt-5 rounded-3xl border border-slate-200 bg-white p-4">
+            <div class="text-lg font-semibold text-slate-900">Upload Images</div>
+            <div class="text-sm text-slate-500 mt-1">Upload at least 5 face images if you don’t use webcam</div>
+
+            <input id="files" type="file" multiple accept="image/*" class="mt-4 block w-full text-sm text-slate-600" />
+            <div class="text-xs text-slate-400 mt-2">Use clear, centered face images with consistent angle and lighting.
+            </div>
           </div>
 
-          <button onclick="doEnroll()" class="mt-4 w-full px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-medium">
-            Enroll
-          </button>
+          <div class="mt-5">
+            <button id="enrollBtn" onclick="doEnrollWithFeedback()"
+              class="owner-btn-success w-full flex items-center justify-center gap-2">
+              <span id="enrollBtnText">Enroll Face Templates</span>
+            </button>
+          </div>
 
           <canvas id="canvas" class="hidden"></canvas>
         </section>
 
-        <section class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-          <div class="font-semibold text-slate-900 mb-2">Quality Tips</div>
-          <ul class="text-sm text-slate-600 space-y-2">
-            <li>Ánh sáng đều, tránh ngược sáng.</li>
-            <li>Không rung/blur, mặt đủ lớn trong khung.</li>
-            <li>Chụp 5 shot: thẳng, hơi trái, hơi phải.</li>
-            <li>Sinh đôi: cân nhắc multi-template + OTP nếu near-threshold.</li>
-          </ul>
+        <!-- Side info -->
+        <section class="space-y-6">
+          <div class="owner-shell-card overflow-hidden">
+            <div class="owner-section-head px-5 py-4">
+              <div class="text-lg font-semibold text-slate-900">Enrollment Summary</div>
+              <div class="text-sm text-slate-500 mt-1">Readable result for owner</div>
+            </div>
+            <div class="p-5">
+              <div id="enrollStatusBox"
+                class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                No enrollment action yet.
+              </div>
+
+              <div class="grid grid-cols-1 gap-3 mt-4">
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="text-xs text-slate-500">Template ID</div>
+                  <div id="summaryTemplateId" class="mt-1 text-base font-semibold text-slate-800">—</div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="text-xs text-slate-500">Quality Score</div>
+                  <div id="summaryQuality" class="mt-1 text-base font-semibold text-slate-800">—</div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="text-xs text-slate-500">Target Account</div>
+                  <div id="summaryAccount" class="mt-1 text-base font-semibold text-slate-800">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="owner-shell-card overflow-hidden">
+            <div class="owner-section-head px-5 py-4">
+              <div class="text-lg font-semibold text-slate-900">Quality Tips</div>
+            </div>
+            <div class="p-5">
+              <ul class="text-sm text-slate-600 space-y-3">
+                <li>Giữ mặt nằm trọn trong khung hướng dẫn.</li>
+                <li>Dùng 5 ảnh với góc hơi khác nhau: thẳng, hơi trái, hơi phải.</li>
+                <li>Tránh blur, rung, ngược sáng.</li>
+                <li>Khoảng cách enroll nên gần giống khoảng cách verify.</li>
+                <li>Sinh đôi: dùng multi-template và rule near-threshold nếu cần.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="owner-shell-card overflow-hidden">
+            <div class="owner-section-head px-5 py-4">
+              <div class="text-lg font-semibold text-slate-900">Recommended Flow</div>
+            </div>
+            <div class="p-5">
+              <ol class="text-sm text-slate-600 space-y-3 list-decimal pl-5">
+                <li>Chọn đúng lock và user.</li>
+                <li>Start camera và đặt mặt vào khung.</li>
+                <li>Capture đủ 5 ảnh hoặc dùng Auto 5.</li>
+                <li>Kiểm tra preview ảnh trước khi enroll.</li>
+                <li>Nhấn Enroll và chờ backend tạo template.</li>
+              </ol>
+            </div>
+          </div>
         </section>
       </div>
     </main>
   </div>
 
-  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <div id="toastArea" class="fixed bottom-5 right-5 w-80 space-y-3 z-50"></div>
+
   <script src="/owner/assets/common.js"></script>
   <script src="/owner/assets/auth.js"></script>
   <script src="/owner/assets/enroll.js"></script>
+  <script>
+    function setEnrollUiState(state, message = "") {
+      const btn = document.getElementById("enrollBtn");
+      const btnText = document.getElementById("enrollBtnText");
+      const badge = document.getElementById("enrollStatusBadge");
+      const box = document.getElementById("enrollStatusBox");
+      const stateText = document.getElementById("enrollStateText");
+
+      if (!btn || !btnText || !badge || !box || !stateText) return;
+
+      if (state === "loading") {
+        btn.disabled = true;
+        btn.classList.add("opacity-80", "cursor-not-allowed");
+        btnText.textContent = "Enrolling...";
+        stateText.textContent = "Processing";
+        badge.className = "inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-200";
+        badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>Enrolling...';
+        box.className = "rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700";
+        box.textContent = message || "Uploading images and creating face template...";
+        return;
+      }
+
+      if (state === "success") {
+        btn.disabled = false;
+        btn.classList.remove("opacity-80", "cursor-not-allowed");
+        btnText.textContent = "Enroll Face Templates";
+        stateText.textContent = "Success";
+        badge.className = "inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200";
+        badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Enroll successful';
+        box.className = "rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700";
+        box.textContent = message || "Face templates enrolled successfully.";
+        return;
+      }
+
+      if (state === "error") {
+        btn.disabled = false;
+        btn.classList.remove("opacity-80", "cursor-not-allowed");
+        btnText.textContent = "Enroll Face Templates";
+        stateText.textContent = "Failed";
+        badge.className = "inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-200";
+        badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>Enroll failed';
+        box.className = "rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700";
+        box.textContent = message || "Enrollment failed. Please check images and try again.";
+        return;
+      }
+
+      btn.disabled = false;
+      btn.classList.remove("opacity-80", "cursor-not-allowed");
+      btnText.textContent = "Enroll Face Templates";
+      stateText.textContent = "Ready";
+      badge.className = "inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-slate-50 text-slate-700 font-semibold border border-slate-200";
+      badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>Ready to enroll';
+      box.className = "rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600";
+      box.textContent = message || "No enrollment action yet.";
+    }
+
+    function setCameraStatus(text) {
+      const el = document.getElementById("cameraStatusText");
+      if (el) el.textContent = text;
+    }
+
+    function updateShotProgress() {
+      const countEl = document.getElementById("shotCount");
+      const progressEl = document.getElementById("shotProgress");
+      if (!countEl || !progressEl) return;
+
+      const count = parseInt(countEl.textContent || "0", 10);
+      const pct = Math.max(0, Math.min(100, count * 20));
+      progressEl.style.width = pct + "%";
+    }
+
+    function fillEnrollSummary(result) {
+      document.getElementById("summaryTemplateId").textContent =
+        result?.template_id ?? "—";
+
+      document.getElementById("summaryQuality").textContent =
+        result?.quality_score != null ? Number(result.quality_score).toFixed(2) : "—";
+
+      document.getElementById("summaryAccount").textContent =
+        result?.target_account_id ?? result?.account_id ?? "—";
+    }
+
+    async function doEnrollWithFeedback() {
+      try {
+        setEnrollUiState("loading", "Uploading 5 images and generating face template...");
+        const result = await doEnroll();
+        fillEnrollSummary(result);
+        setEnrollUiState("success", "Face templates enrolled successfully.");
+        toast("Enroll successful", "success");
+        return result;
+      } catch (e) {
+        fillEnrollSummary({});
+        setEnrollUiState("error", e?.message || "Enrollment failed.");
+        toast("Enroll failed: " + (e?.message || "Unknown error"), "danger");
+        throw e;
+      }
+    }
+
+    async function camStartAndUpdate() {
+      await camStart();
+      setCameraStatus("Running");
+    }
+
+    function camStopAndUpdate() {
+      camStop();
+      setCameraStatus("Stopped");
+    }
+
+    function captureShotAndUpdate() {
+      captureShot();
+      updateShotProgress();
+    }
+
+    async function autoCapture5AndUpdate() {
+      await autoCapture5();
+      updateShotProgress();
+    }
+
+    function clearShotsAndUpdate() {
+      clearShots();
+      updateShotProgress();
+    }
+
+    async function enrollInitPage() {
+      await enrollInit();
+      setEnrollUiState("idle");
+      setCameraStatus("Idle");
+      updateShotProgress();
+
+      const shotCountEl = document.getElementById("shotCount");
+      if (shotCountEl) {
+        const observer = new MutationObserver(updateShotProgress);
+        observer.observe(shotCountEl, { childList: true, subtree: true, characterData: true });
+      }
+    }
+  </script>
 </body>
+
 </html>

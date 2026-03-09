@@ -1,45 +1,53 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Owner Login — Smart Lock Face Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="/owner/assets/styles.css" rel="stylesheet"/>
+  <link href="/owner/assets/styles.css" rel="stylesheet" />
 </head>
-<body class="min-h-screen bg-slate-50">
+
+<body class="min-h-screen bg-slate-100">
   <div class="min-h-screen flex items-center justify-center p-6">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-6">
+    <div class="w-full max-w-md owner-shell-card p-6">
       <div class="mb-6">
-        <div class="text-xl font-semibold text-slate-900">Smart Lock Face Pro</div>
-        <div class="text-sm text-slate-500">Owner Console</div>
+        <div class="flex items-center gap-3 mb-4">
+          <div
+            class="owner-brand-badge w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
+            SL</div>
+          <div>
+            <div class="text-xl font-semibold text-slate-900">Smart Lock Face Pro</div>
+            <div class="text-sm text-slate-500">Owner Console</div>
+          </div>
+        </div>
       </div>
 
-      <div class="space-y-3">
+      <div class="space-y-4">
         <div>
           <label class="text-sm text-slate-600">Email</label>
-          <input id="email" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                 placeholder="owner@example.com"/>
+          <input id="email" class="owner-input mt-1" placeholder="owner@example.com" />
         </div>
         <div>
           <label class="text-sm text-slate-600">Password</label>
-          <input id="password" type="password" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                 placeholder="********"/>
+          <input id="password" type="password" class="owner-input mt-1" placeholder="********" />
         </div>
-        <button onclick="ownerLogin()"
-                class="w-full mt-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700">
+
+        <button onclick="ownerLogin()" class="owner-btn-primary w-full">
           Sign in
         </button>
 
-        <div class="text-xs text-slate-500 mt-2">
+        <div class="text-xs text-slate-500">
           Dev seed: owner@example.com / Owner123456
         </div>
       </div>
     </div>
   </div>
 
-  <div id="toastArea" class="fixed bottom-4 right-4 w-80"></div>
+  <div id="toastArea" class="fixed bottom-5 right-5 w-80 space-y-3 z-50"></div>
   <script src="/owner/assets/common.js"></script>
   <script src="/owner/assets/auth.js"></script>
 </body>
+
 </html>
