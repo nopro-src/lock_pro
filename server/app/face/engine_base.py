@@ -26,6 +26,10 @@ class FaceEngineBase(ABC):
         """
         Returns:
           embedding (float32, normalized NOT guaranteed)
-          meta: may include face bbox, pose, detection score ...
+          meta: may include:
+            - bbox
+            - pose
+            - det_score
+            - face_count
         """
         raise NotImplementedError

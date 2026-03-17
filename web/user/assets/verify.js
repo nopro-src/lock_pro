@@ -85,30 +85,56 @@ function captureB64() {
 
   return c.toDataURL("image/jpeg", 0.92);
 }
+function mapFaceErrorMessage(message) {
+  const msg = String(message || "");
 
+  if (msg.includes("Multiple faces detected")) {
+    return "Phát hiện nhiều khuôn mặt. Vui lòng chỉ để 1 người trong khung hình.";
+  }
+  if (msg.includes("No face detected")) {
+    return "Không phát hiện khuôn mặt. Hãy đưa mặt vào giữa khung hình.";
+  }
+  if (msg.includes("Too blurry")) {
+    return "Ảnh bị mờ. Hãy đứng yên và thử lại.";
+  }
+
+  return msg;
+}
 async function doVerify() {
   const sel = document.getElementById("lockSel");
   const resultBox = document.getElementById("result");
 
-  if (!sel) throw new Error("Lock selector not found");
+  try {
+    if (!sel) throw new Error("Lock selector not found");
 
-  const lock_id = parseInt(sel.value, 10);
-  if (!lock_id) throw new Error("Please select a valid lock");
+    const lock_id = parseInt(sel.value, 10);
+    if (!lock_id) throw new Error("Please select a valid lock");
 
-  const image_base64 = captureB64();
+    const image_base64 = captureB64();
 
-  const out = await apiFetch("/api/verify", {
-    method: "POST",
-    body: JSON.stringify({
-      lock_id,
-      image_base64,
-      source: "web"
-    })
-  });
+    const out = await apiFetch("/api/verify", {
+      method: "POST",
+      body: JSON.stringify({
+        lock_id,
+        image_base64,
+        source: "web"
+      })
+    });
 
-  if (resultBox) {
-    resultBox.textContent = JSON.stringify(out, null, 2);
+    if (resultBox) {
+      resultBox.textContent = JSON.stringify(out, null, 2);
+    }
+
+    toast(out.success ? "Xác thực thành công" : "Xác thực thất bại", out.success ? "success" : "danger");
+    return out;
+  } catch (e) {
+    const friendly = mapFaceErrorMessage(e.message);
+
+    if (resultBox) {
+      resultBox.textContent = friendly;
+    }
+
+    toast(friendly, "danger");
+    throw new Error(friendly);
   }
-
-  return out;
 }

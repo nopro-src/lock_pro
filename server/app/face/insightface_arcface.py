@@ -36,17 +36,24 @@ class InsightFaceArcFaceBuffaloL(FaceEngineBase):
         if not faces:
             raise ValueError("No face detected")
 
-        # take the largest face (more robust)
-        faces_sorted = sorted(faces, key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]), reverse=True)
+        faces_sorted = sorted(
+            faces,
+            key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]),
+            reverse=True,
+        )
         f = faces_sorted[0]
 
         emb = np.asarray(f.embedding, dtype=np.float32)
         meta = {
             "bbox": [float(x) for x in f.bbox],
             "det_score": float(getattr(f, "det_score", 0.0)),
+            "face_count": int(len(faces)),
+            "all_bboxes": [
+                [float(x) for x in face.bbox]
+                for face in faces_sorted
+            ],
         }
 
-        # pose might exist depending on insightface version; keep defensive
         pose = getattr(f, "pose", None)
         if pose is not None:
             try:

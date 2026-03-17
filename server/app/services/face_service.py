@@ -21,10 +21,6 @@ from app.exceptions import ForbiddenError, NotFoundError
 logger = logging.getLogger("services.face")
 
 
-# ==========================
-# Utility
-# ==========================
-
 def l2_normalize(v: np.ndarray) -> np.ndarray:
     v = v.astype(np.float32)
     n = np.linalg.norm(v) + 1e-12
@@ -46,10 +42,6 @@ def unpack_embedding(blob: bytes, dim: int) -> np.ndarray:
     return v
 
 
-# ==========================
-# Service
-# ==========================
-
 class FaceService:
     def __init__(self, db: Session, registry: FaceEngineRegistry):
         self.db = db
@@ -60,6 +52,15 @@ class FaceService:
         self.lock_service = LockService(db)
         self.device_repo = DeviceRepo(db)
         self.device_service = DeviceService(db)
+
+    def _require_single_face(self, meta: dict) -> None:
+        face_count = int(meta.get("face_count", 1))
+
+        if face_count <= 0:
+            raise ValueError("No face detected")
+
+        if face_count > 1:
+            raise ValueError("Multiple faces detected. Please keep only one face in frame.")
 
     # ======================================================
     # ENROLL
@@ -77,14 +78,12 @@ class FaceService:
         OWNER enroll face cho USER.
         """
 
-        # 1️ Kiểm tra quyền (chỉ OWNER của lock)
         self.lock_service.require_member_role(
             lock_id,
             actor_account_id,
             LockRole.OWNER,
         )
 
-        # 2️ Kiểm tra user được enroll có thuộc lock không
         try:
             self.lock_service.require_member_role(
                 lock_id,
@@ -94,7 +93,6 @@ class FaceService:
         except Exception:
             raise ForbiddenError("Target account is not a member of this lock")
 
-        # 3️ Validate số ảnh
         if len(images_base64) < settings.FACE_ENROLL_SHOTS_MIN:
             raise ValueError(
                 f"Need at least {settings.FACE_ENROLL_SHOTS_MIN} shots"
@@ -105,27 +103,27 @@ class FaceService:
         embeddings: list[np.ndarray] = []
         quality_scores: list[float] = []
 
-        for b64 in images_base64:
+        for idx, b64 in enumerate(images_base64, start=1):
             bgr = b64_to_bgr(b64)
             emb, meta = engine.extract_embedding(bgr)
+
+            self._require_single_face(meta)
 
             q = gate_quality(bgr, meta)
             if not q.ok:
                 raise ValueError(
-                    f"Quality gate failed: {q.reasons} metrics={q.metrics}"
+                    f"Shot #{idx} failed quality gate: {q.reasons} metrics={q.metrics}"
                 )
 
             embeddings.append(l2_normalize(emb))
             quality_scores.append(q.score)
 
-        # 4️ 5-shot mean embedding
         mean_emb = l2_normalize(
             np.mean(np.stack(embeddings, axis=0), axis=0)
         )
 
         quality_score = float(np.mean(np.array(quality_scores)))
 
-        # 5️ Lưu template
         template = self.templates.create(
             lock_id=lock_id,
             account_id=target_account_id,
@@ -159,7 +157,8 @@ class FaceService:
         bgr = b64_to_bgr(image_base64)
         emb, meta = engine.extract_embedding(bgr)
 
-        # 1️ Quality gate
+        self._require_single_face(meta)
+
         q = gate_quality(bgr, meta)
 
         threshold_used = float(
@@ -188,7 +187,6 @@ class FaceService:
                 "topk": [],
             }
 
-        # 2️ So sánh với templates
         probe = l2_normalize(emb)
         templates = self.templates.list_by_lock_and_model(
             lock_id, engine.model_key
@@ -213,14 +211,12 @@ class FaceService:
 
         success = bool(best_score >= threshold_used)
 
-        # 3️ Device mapping
         device_id = None
         if device_uid:
             d = self.device_repo.get_by_uid(lock_id, device_uid)
             if d:
                 device_id = d.id
 
-        # 4️⃣ Log access
         row = self.logs.create(
             lock_id=lock_id,
             matched_account_id=best_account_id if success else None,
@@ -232,7 +228,6 @@ class FaceService:
         )
         self.db.commit()
 
-        # 5️⃣ Create OPEN command nếu thành công
         cmd_id = None
         if success:
             cmd = self.device_service.create_command(

@@ -173,42 +173,49 @@ async function readFilesAsBase64(files) {
 }
 
 async function doEnroll() {
-  const lock_id = parseInt(document.getElementById("lockSel").value, 10);
+  try {
+    const lock_id = parseInt(document.getElementById("lockSel").value, 10);
 
-  const userSel = document.getElementById("userSel");
-  let target_account_id = userSel ? parseInt(userSel.value || "", 10) : NaN;
+    const userSel = document.getElementById("userSel");
+    let target_account_id = userSel ? parseInt(userSel.value || "", 10) : NaN;
 
-  if (!Number.isFinite(target_account_id)) {
-    const manual = document.getElementById("accountId");
-    target_account_id = parseInt((manual?.value || "").trim(), 10);
+    if (!Number.isFinite(target_account_id)) {
+      const manual = document.getElementById("accountId");
+      target_account_id = parseInt((manual?.value || "").trim(), 10);
+    }
+
+    if (!Number.isFinite(target_account_id) || target_account_id <= 0) {
+      throw new Error("Missing account_id: hãy chọn user hoặc nhập Account ID");
+    }
+
+    let images = shots.slice(0, 5);
+    const files = document.getElementById("files")?.files;
+
+    if (images.length < 5 && files && files.length >= 5) {
+      images = await readFilesAsBase64(Array.from(files).slice(0, 5));
+    }
+
+    if (images.length < 5) {
+      throw new Error("Need 5 images (webcam shots or files)");
+    }
+
+    const out = await apiFetch("/api/enroll", {
+      method: "POST",
+      body: JSON.stringify({
+        lock_id,
+        target_account_id,
+        images_base64: images,
+      }),
+    });
+
+    clearShots();
+    toast("Enroll thành công", "success");
+    return out;
+  } catch (e) {
+    const friendly = mapFaceErrorMessage(e.message);
+    toast(friendly, "danger");
+    throw new Error(friendly);
   }
-
-  if (!Number.isFinite(target_account_id) || target_account_id <= 0) {
-    throw new Error("Missing account_id: hãy chọn user hoặc nhập Account ID");
-  }
-
-  let images = shots.slice(0, 5);
-  const files = document.getElementById("files")?.files;
-
-  if (images.length < 5 && files && files.length >= 5) {
-    images = await readFilesAsBase64(Array.from(files).slice(0, 5));
-  }
-
-  if (images.length < 5) {
-    throw new Error("Need 5 images (webcam shots or files)");
-  }
-
-  const out = await apiFetch("/api/enroll", {
-    method: "POST",
-    body: JSON.stringify({
-      lock_id,
-      target_account_id,
-      images_base64: images,
-    }),
-  });
-
-  clearShots();
-  return out;
 }
 
 function escapeHtml(s) {
@@ -219,7 +226,21 @@ function escapeHtml(s) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+function mapFaceErrorMessage(message) {
+  const msg = String(message || "");
 
+  if (msg.includes("Multiple faces detected")) {
+    return "Phát hiện nhiều khuôn mặt. Khi đăng ký, chỉ để 1 người trong khung hình.";
+  }
+  if (msg.includes("No face detected")) {
+    return "Không phát hiện khuôn mặt. Hãy đưa mặt vào giữa khung hình.";
+  }
+  if (msg.includes("Too blurry")) {
+    return "Ảnh bị mờ. Hãy giữ máy ổn định và đủ sáng.";
+  }
+
+  return msg;
+}
 window.enrollInit = enrollInit;
 window.camStart = camStart;
 window.camStop = camStop;
