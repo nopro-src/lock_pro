@@ -12,9 +12,7 @@ from app.repos.access_log_repo import AccessLogRepo
 from app.repos.lock_repo import LockRepo
 from app.repos.device_repo import DeviceRepo
 from app.services.lock_service import LockService
-from app.services.device_service import DeviceService
 from app.models.access_log import AccessSource
-from app.models.device_command import CommandType
 from app.models.lock_member import LockRole
 from app.exceptions import ForbiddenError, NotFoundError
 
@@ -51,7 +49,6 @@ class FaceService:
         self.locks_repo = LockRepo(db)
         self.lock_service = LockService(db)
         self.device_repo = DeviceRepo(db)
-        self.device_service = DeviceService(db)
 
     def _require_single_face(self, meta: dict) -> None:
         face_count = int(meta.get("face_count", 1))
@@ -62,10 +59,6 @@ class FaceService:
         if face_count > 1:
             raise ValueError("Multiple faces detected. Please keep only one face in frame.")
 
-    # ======================================================
-    # ENROLL
-    # ======================================================
-
     def enroll(
         self,
         *,
@@ -74,10 +67,6 @@ class FaceService:
         target_account_id: int,
         images_base64: list[str],
     ):
-        """
-        OWNER enroll face cho USER.
-        """
-
         self.lock_service.require_member_role(
             lock_id,
             actor_account_id,
@@ -94,9 +83,7 @@ class FaceService:
             raise ForbiddenError("Target account is not a member of this lock")
 
         if len(images_base64) < settings.FACE_ENROLL_SHOTS_MIN:
-            raise ValueError(
-                f"Need at least {settings.FACE_ENROLL_SHOTS_MIN} shots"
-            )
+            raise ValueError(f"Need at least {settings.FACE_ENROLL_SHOTS_MIN} shots")
 
         engine = self.registry.get(settings.FACE_MODEL_KEY)
 
@@ -118,10 +105,7 @@ class FaceService:
             embeddings.append(l2_normalize(emb))
             quality_scores.append(q.score)
 
-        mean_emb = l2_normalize(
-            np.mean(np.stack(embeddings, axis=0), axis=0)
-        )
-
+        mean_emb = l2_normalize(np.mean(np.stack(embeddings, axis=0), axis=0))
         quality_score = float(np.mean(np.array(quality_scores)))
 
         template = self.templates.create(
@@ -136,10 +120,6 @@ class FaceService:
 
         self.db.commit()
         return template
-
-    # ======================================================
-    # VERIFY
-    # ======================================================
 
     def verify(
         self,
@@ -161,9 +141,7 @@ class FaceService:
 
         q = gate_quality(bgr, meta)
 
-        threshold_used = float(
-            lock.threshold_override or settings.FACE_DEFAULT_THRESHOLD
-        )
+        threshold_used = float(lock.threshold_override or settings.FACE_DEFAULT_THRESHOLD)
 
         if not q.ok:
             row = self.logs.create(
@@ -185,12 +163,11 @@ class FaceService:
                 "log_id": row.id,
                 "quality": q.to_dict(),
                 "topk": [],
+                "result": "QUALITY_FAILED",
             }
 
         probe = l2_normalize(emb)
-        templates = self.templates.list_by_lock_and_model(
-            lock_id, engine.model_key
-        )
+        templates = self.templates.list_by_lock_and_model(lock_id, engine.model_key)
 
         if not templates:
             raise NotFoundError("No face templates enrolled for this lock")
@@ -203,12 +180,10 @@ class FaceService:
             scored.append((s, t.account_id))
 
         scored.sort(key=lambda x: x[0], reverse=True)
-
         topk = scored[: max(1, settings.FACE_TOP_K)]
 
         best_score = topk[0][0]
         best_account_id = topk[0][1]
-
         success = bool(best_score >= threshold_used)
 
         device_id = None
@@ -228,28 +203,16 @@ class FaceService:
         )
         self.db.commit()
 
-        cmd_id = None
-        if success:
-            cmd = self.device_service.create_command(
-                lock_id,
-                CommandType.OPEN,
-                {
-                    "reason": "face_verified",
-                    "score": float(best_score),
-                },
-            )
-            cmd_id = cmd.id
-
         return {
             "success": success,
             "matched_account_id": best_account_id if success else None,
             "score": float(best_score),
             "threshold_used": threshold_used,
             "log_id": row.id,
-            "device_command_id": cmd_id,
             "quality": q.to_dict(),
             "topk": [
                 {"score": float(s), "account_id": int(aid)}
                 for s, aid in topk
             ],
+            "result": "MATCH" if success else "NO_MATCH",
         }

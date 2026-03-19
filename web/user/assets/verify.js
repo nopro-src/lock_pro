@@ -35,7 +35,7 @@ async function camStart() {
   if (!video) throw new Error("Camera element not found");
 
   stream = await navigator.mediaDevices.getUserMedia({
-    video: { width: 960, height: 540 },
+    video: { width: 640, height: 360 },
     audio: false
   });
 
@@ -70,8 +70,10 @@ function captureB64() {
   const cropX = Math.floor((srcW - cropW) / 2);
   const cropY = Math.floor((srcH - cropH) / 2);
 
-  c.width = cropW;
-  c.height = cropH;
+  // Scale xuống nhỏ hơn để giảm lag
+  const outSize = 320;
+  c.width = outSize;
+  c.height = outSize;
 
   const ctx = c.getContext("2d");
   if (!ctx) throw new Error("Canvas context not available");
@@ -83,8 +85,9 @@ function captureB64() {
     0, 0, c.width, c.height
   );
 
-  return c.toDataURL("image/jpeg", 0.92);
+  return c.toDataURL("image/jpeg", 0.75);
 }
+
 function mapFaceErrorMessage(message) {
   const msg = String(message || "");
 
@@ -97,9 +100,25 @@ function mapFaceErrorMessage(message) {
   if (msg.includes("Too blurry")) {
     return "Ảnh bị mờ. Hãy đứng yên và thử lại.";
   }
+  if (msg.includes("Too dark")) {
+    return "Ảnh quá tối. Hãy tăng ánh sáng và thử lại.";
+  }
+  if (msg.includes("Too bright")) {
+    return "Ảnh quá sáng. Hãy giảm chói hoặc đổi góc camera.";
+  }
+  if (msg.includes("Face too small")) {
+    return "Khuôn mặt quá nhỏ trong khung hình. Hãy đứng gần camera hơn.";
+  }
+  if (msg.includes("No face templates enrolled")) {
+    return "Khóa này chưa có dữ liệu khuôn mặt được đăng ký.";
+  }
+  if (msg.includes("Device not found for this lock")) {
+    return "Không tìm thấy thiết bị tương ứng với khóa này.";
+  }
 
   return msg;
 }
+
 async function doVerify() {
   const sel = document.getElementById("lockSel");
   const resultBox = document.getElementById("result");
@@ -117,7 +136,8 @@ async function doVerify() {
       body: JSON.stringify({
         lock_id,
         image_base64,
-        source: "web"
+        source: "web",
+        device_uid: "lock_001"
       })
     });
 
@@ -125,16 +145,20 @@ async function doVerify() {
       resultBox.textContent = JSON.stringify(out, null, 2);
     }
 
-    toast(out.success ? "Xác thực thành công" : "Xác thực thất bại", out.success ? "success" : "danger");
     return out;
   } catch (e) {
-    const friendly = mapFaceErrorMessage(e.message);
+    const friendly = mapFaceErrorMessage(e?.message || e);
 
     if (resultBox) {
       resultBox.textContent = friendly;
     }
 
-    toast(friendly, "danger");
     throw new Error(friendly);
   }
+}
+
+async function openLockAfterVerify(lockId) {
+  return await apiFetch(`/api/locks/${lockId}/open`, {
+    method: "POST"
+  });
 }

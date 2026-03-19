@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import db_dep
@@ -53,6 +53,28 @@ def list_members(lock_id: int, db: Session = Depends(db_dep), acct=Depends(get_c
     try:
         rows = LockService(db).list_members(lock_id, acct.id)
         return [MemberOut(id=r.id, lock_id=r.lock_id, account_id=r.account_id, role=r.role) for r in rows]
+    except ForbiddenError as e:
+        raise http_403(str(e))
+    except NotFoundError as e:
+        raise http_404(str(e))
+
+
+@router.post("/{lock_id}/open", status_code=status.HTTP_200_OK)
+def open_lock(lock_id: int, db: Session = Depends(db_dep), acct=Depends(get_current_account)):
+    try:
+        LockService(db).open_lock(lock_id, acct.id)
+        return {"ok": True, "lock_id": lock_id, "command": "open"}
+    except ForbiddenError as e:
+        raise http_403(str(e))
+    except NotFoundError as e:
+        raise http_404(str(e))
+
+
+@router.post("/{lock_id}/close", status_code=status.HTTP_200_OK)
+def close_lock(lock_id: int, db: Session = Depends(db_dep), acct=Depends(get_current_account)):
+    try:
+        LockService(db).close_lock(lock_id, acct.id)
+        return {"ok": True, "lock_id": lock_id, "command": "close"}
     except ForbiddenError as e:
         raise http_403(str(e))
     except NotFoundError as e:

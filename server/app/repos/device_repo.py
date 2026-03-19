@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, desc
 
 from app.models.device import Device, DeviceStatus
 
@@ -15,6 +15,14 @@ class DeviceRepo:
         stmt = select(Device).where(Device.lock_id == lock_id, Device.device_uid == device_uid)
         return self.db.execute(stmt).scalars().first()
 
+    def get_latest_by_lock_id(self, lock_id: int) -> Device | None:
+        stmt = (
+            select(Device)
+            .where(Device.lock_id == lock_id)
+            .order_by(desc(Device.last_seen_at), desc(Device.id))
+        )
+        return self.db.execute(stmt).scalars().first()
+
     def upsert_seen(self, lock_id: int, device_uid: str, fw: str = "") -> Device:
         d = self.get_by_uid(lock_id, device_uid)
         now = datetime.utcnow()
@@ -25,7 +33,14 @@ class DeviceRepo:
                 d.firmware_version = fw
             self.db.flush()
             return d
-        d = Device(lock_id=lock_id, device_uid=device_uid, firmware_version=fw, status=DeviceStatus.ONLINE, last_seen_at=now)
+
+        d = Device(
+            lock_id=lock_id,
+            device_uid=device_uid,
+            firmware_version=fw,
+            status=DeviceStatus.ONLINE,
+            last_seen_at=now,
+        )
         self.db.add(d)
         self.db.flush()
         return d

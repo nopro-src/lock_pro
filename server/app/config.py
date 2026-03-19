@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
-BASE_DIR = Path(__file__).resolve().parents[2]   # smart-lock-face-pro/
+BASE_DIR = Path(__file__).resolve().parents[2]
 WEB_DIR = BASE_DIR / "web"
 
 
@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     APP_NAME: str = "Smart Lock Face Pro"
-    ENV: str = Field(default="dev")  # dev | prod
+    ENV: str = Field(default="dev")
     DEBUG: bool = Field(default=False)
 
     # Security
@@ -45,6 +45,15 @@ class Settings(BaseSettings):
 
     # Device / transport
     DEVICE_TRANSPORT: str = Field(default="mqtt_stub")  # mqtt_stub | mqtt | http
+
+    # MQTT
+    MQTT_HOST: str = Field(default="")
+    MQTT_PORT: int = Field(default=8883)
+    MQTT_USERNAME: str = Field(default="")
+    MQTT_PASSWORD: str = Field(default="")
+    MQTT_USE_TLS: bool = Field(default=True)
+    MQTT_TOPIC_PREFIX: str = Field(default="smartlock/locks")
+    MQTT_BACKEND_CLIENT_ID: str = Field(default="backend_smartlock_api")
 
     # Logging
     LOG_LEVEL: str = Field(default="INFO")

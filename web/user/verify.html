@@ -220,15 +220,20 @@
         result?.result ??
         (result?.success === true ? "SUCCESS" : result?.success === false ? "FAILED" : "—");
 
-      document.getElementById("summaryMatched").textContent = matchedValue;
-      document.getElementById("summaryScore").textContent = scoreValue;
-      document.getElementById("summaryThreshold").textContent = thresholdValue;
-      document.getElementById("summaryMatchedAccount").textContent = matchedAccountValue;
-      document.getElementById("summaryResult").textContent = backendResultValue;
+      document.getElementById("summaryMatched").textContent = String(matchedValue);
+      document.getElementById("summaryScore").textContent = String(scoreValue);
+      document.getElementById("summaryThreshold").textContent = String(thresholdValue);
+      document.getElementById("summaryMatchedAccount").textContent = String(matchedAccountValue);
+      document.getElementById("summaryResult").textContent = String(backendResultValue);
     }
 
     async function doVerifyWithFeedback() {
       try {
+        const lockSel = document.getElementById("lockSel");
+        const lockId = parseInt(lockSel.value, 10);
+
+        setVerifyUiState("loading", "Đang xử lý nhận diện khuôn mặt...");
+
         const result = await doVerify();
         console.log("VERIFY_RESULT =", result);
 
@@ -242,20 +247,23 @@
           result?.result === "SUCCESS" ||
           result?.matched_account_id != null;
 
-        if (isMatched) {
-          setVerifyUiState("success", "Face verified successfully.");
-          toast("Verify successful", "success");
-        } else {
+        if (!isMatched) {
           setVerifyUiState("error", "Face not matched or unlock request was rejected.");
           toast("Verify failed", "danger");
+          return result;
         }
 
+        setVerifyUiState("success", "Face verified successfully. Sending unlock command...");
+        toast("Verify successful", "success");
+
+        await openLockAfterVerify(lockId);
+        toast("Unlock command sent", "success");
+
+        setVerifyUiState("success", "Face verified and unlock command sent.");
         return result;
       } catch (e) {
         console.error("VERIFY_ERROR =", e);
         setVerifyUiState("error", e?.message || "Verification failed.");
-        fillSummary({});
-        document.getElementById("result").textContent = "";
         toast("Verify failed: " + (e?.message || "Unknown error"), "danger");
         throw e;
       }

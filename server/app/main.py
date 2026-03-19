@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import logging
+import os
+import warnings
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
@@ -15,14 +18,46 @@ from app.api.routers import auth, locks, users, face, logs, system
 from app.security.jwt import decode_token
 from app.ws.manager import WsManager
 from app.schemas.ws import WsEvent
+from app.api.deps import preload_face_registry
+
+
+# ---------------------------------
+# Reduce noisy warnings / update checks
+# ---------------------------------
+os.environ["NO_ALBUMENTATIONS_UPDATE"] = "1"
+
+warnings.filterwarnings("ignore", category=UserWarning, module="albumentations")
+warnings.filterwarnings("ignore", category=FutureWarning, module="insightface")
+warnings.filterwarnings("ignore", category=FutureWarning, module="skimage")
+warnings.filterwarnings("ignore", category=FutureWarning, module="numpy")
 
 
 setup_logging(settings.LOG_LEVEL)
 logger = logging.getLogger("app")
 
-app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 
-Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("App startup: initializing database and shared resources")
+    Base.metadata.create_all(bind=engine)
+
+    # Preload face model once at startup
+    try:
+        preload_face_registry()
+        logger.info("Face registry preloaded successfully")
+    except Exception as e:
+        logger.exception("Failed to preload face registry: %s", e)
+
+    yield
+
+    logger.info("App shutdown")
+
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    debug=settings.DEBUG,
+    lifespan=lifespan,
+)
 
 # Single WS manager
 app.state.ws_manager = WsManager()
@@ -38,7 +73,7 @@ app.include_router(system.router)
 # -----------------------------
 # Static UI directories
 # -----------------------------
-BASE_DIR = Path(__file__).resolve().parents[2]   # smart-lock-face-pro/
+BASE_DIR = Path(__file__).resolve().parents[2]
 WEB_DIR = BASE_DIR / "web"
 OWNER_DIR = WEB_DIR / "owner"
 USER_DIR = WEB_DIR / "user"

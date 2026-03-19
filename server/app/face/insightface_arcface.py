@@ -21,7 +21,7 @@ class InsightFaceArcFaceBuffaloL(FaceEngineBase):
 
         self._app = FaceAnalysis(name="buffalo_l")
         # ctx_id: -1 CPU, 0 GPU
-        self._app.prepare(ctx_id=-1, det_size=(640, 640))
+        self._app.prepare(ctx_id=-1, det_size=(320, 320))
 
     @property
     def model_key(self) -> str:

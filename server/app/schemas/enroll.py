@@ -12,7 +12,6 @@ class EnrollIn(BaseModel):
 
     @model_validator(mode="after")
     def _normalize(self):
-        # allow either account_id or target_account_id
         if self.target_account_id is None and self.account_id is not None:
             self.target_account_id = self.account_id
 
@@ -32,7 +31,7 @@ class EnrollOut(BaseModel):
 class VerifyIn(BaseModel):
     lock_id: int
     image_base64: str
-    source: str = Field(default="web")  # web/mobile/device
+    source: str = Field(default="web")
     device_uid: str | None = None
 
 
@@ -41,3 +40,4 @@ class VerifyOut(BaseModel):
     matched_account_id: int | None
     score: float
     threshold_used: float
+    result: str | None = None
