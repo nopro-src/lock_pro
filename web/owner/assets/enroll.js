@@ -209,11 +209,11 @@ async function doEnroll() {
     });
 
     clearShots();
-    toast("Enroll thành công", "success");
+    alert("Enroll thành công");
     return out;
   } catch (e) {
     const friendly = mapFaceErrorMessage(e.message);
-    toast(friendly, "danger");
+    alert(friendly);
     throw new Error(friendly);
   }
 }
